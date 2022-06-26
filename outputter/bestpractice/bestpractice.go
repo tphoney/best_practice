@@ -13,17 +13,21 @@ const (
 
 type outputterConfig struct {
 	name         string
+	description  string
 	stdOutput    bool
 	outputToFile string
 }
 
-func New() (types.Outputter, error) {
-	c := new(outputterConfig)
-	c.name = Name
-	c.stdOutput = true
-	c.outputToFile = ""
+func New(opts ...Option) (types.Outputter, error) {
+	oc := new(outputterConfig)
+	oc.name = Name
+	oc.description = "Gives some real world examples of how to improve your code"
+	// apply options
+	for _, opt := range opts {
+		opt(oc)
+	}
 
-	return c, nil
+	return oc, nil
 }
 
 func (oc outputterConfig) Name() string {
@@ -34,7 +38,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	var bestPracticeResults []types.Scanlet
 	// iterate over enabled outputs
 	for _, output := range scanResults {
-		if output.OutputRender == Name {
+		if output.OutputRenderer == Name {
 			bestPracticeResults = append(bestPracticeResults, output)
 		}
 	}
@@ -45,11 +49,10 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	fmt.Println("Best Practice Results:")
 	for _, result := range bestPracticeResults {
 		bp := result.Spec.(types.BestPracticeOutput)
-		fmt.Printf(`
-%s: %s
-command: %s
-url: %s
-`, result.Name, result.HumanReasoning, bp.Command, bp.Url)
+		fmt.Printf(`- %s: %s
+  command to run: "%s"
+  url: %s
+`, result.Name, result.Description, bp.Command, bp.Url)
 	}
 	fmt.Println("")
 	return nil

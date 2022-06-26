@@ -37,10 +37,10 @@ func Exec(ctx context.Context, args Args) error {
 	for _, outputName := range args.RequestedOutputs {
 		switch outputName {
 		case dronebuild.Name:
-			db, _ := dronebuild.New()
+			db, _ := dronebuild.New(dronebuild.WithOutputToFile(".drone.yml.new"), dronebuild.WithStdOutput(false))
 			outputters = append(outputters, db)
 		case bestpractice.Name:
-			bp, _ := bestpractice.New()
+			bp, _ := bestpractice.New(bestpractice.WithStdOutput(true))
 			outputters = append(outputters, bp)
 		default:
 			fmt.Printf("unknown output: %s", outputName)

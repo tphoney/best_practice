@@ -67,8 +67,8 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 	if err == nil {
 		droneBuildResult := types.Scanlet{
 			Name:           "go_mod",
-			HumanReasoning: "run go mod",
-			OutputRender:   dronebuild.Name,
+			Description:    "run go mod",
+			OutputRenderer: dronebuild.Name,
 			Spec: types.DroneBuildOutput{
 				RawYaml: `  - name: go mod
   image: golang:1
@@ -80,8 +80,8 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 		outputResults = append(outputResults, droneBuildResult)
 		bestPracticeResult := types.Scanlet{
 			Name:           "go_mod",
-			HumanReasoning: "make sure your go mod file is up to date",
-			OutputRender:   bestpractice.Name,
+			Description:    "make sure your go mod file is up to date",
+			OutputRenderer: bestpractice.Name,
 			Spec: types.BestPracticeOutput{
 				Command: "go mod tidy",
 				Url:     "https://go.dev/ref/mod#go-mod-tidy",
@@ -99,8 +99,8 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 	if err != nil {
 		droneBuildResult := types.Scanlet{
 			Name:           "go_lint",
-			HumanReasoning: "run go lint as part of the build",
-			OutputRender:   dronebuild.Name,
+			Description:    "run go lint as part of the build",
+			OutputRenderer: dronebuild.Name,
 			Spec: types.DroneBuildOutput{
 				RawYaml: `  - name: golangci-lint
   image: golangci/golangci-lint
@@ -111,8 +111,8 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 		outputResults = append(outputResults, droneBuildResult)
 		bestPracticeResult := types.Scanlet{
 			Name:           "go_lint",
-			HumanReasoning: "go lint teaches you to write better code",
-			OutputRender:   bestpractice.Name,
+			Description:    "go lint teaches you to write better code",
+			OutputRenderer: bestpractice.Name,
 			Spec: types.BestPracticeOutput{
 				Command: "golangci-lint run",
 				Url:     "https://golangci-lint.run.googlesource.com/golangci-lint",

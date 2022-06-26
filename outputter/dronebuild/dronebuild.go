@@ -19,14 +19,16 @@ type outputterConfig struct {
 	outputToFile string
 }
 
-func New() (types.Outputter, error) {
-	c := new(outputterConfig)
-	c.name = Name
-	c.description = "Creates a Drone build file"
-	c.stdOutput = true
-	c.outputToFile = ""
+func New(opts ...Option) (types.Outputter, error) {
+	oc := new(outputterConfig)
+	oc.name = Name
+	oc.description = "Creates a Drone build file"
+	// apply options
+	for _, opt := range opts {
+		opt(oc)
+	}
 
-	return c, nil
+	return oc, nil
 }
 
 func (oc outputterConfig) Name() string {
@@ -36,7 +38,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	var results []types.Scanlet
 	// iterate over enabled outputs
 	for _, output := range scanResults {
-		if output.OutputRender == Name {
+		if output.OutputRenderer == Name {
 			results = append(results, output)
 		}
 	}
@@ -46,11 +48,11 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	}
 	// lets explain what we added to the drone build
 	fmt.Println("")
-	fmt.Println("Added to Drone Build:")
+	fmt.Printf("Created a new Drone Build file '%s' with:\n", oc.outputToFile)
 	for _, result := range results {
-		fmt.Printf(`- %s
-`, result.HumanReasoning)
+		fmt.Printf("- %s\n", result.Description)
 	}
+	fmt.Println("")
 
 	buildOutput := `kind: pipeline
 type: docker

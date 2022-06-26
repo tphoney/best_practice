@@ -13,13 +13,6 @@ type (
 		Name() string
 	}
 
-	// ScanInput struct {
-	// 	FamilyName       string
-	// 	RequestedOutputs []string `json:"requested_outputs" yaml:"requested_outputs"`
-	// 	RunAll           bool     `json:"run_all" yaml:"run_all"`
-	// 	ScanletsToRun    []string `json:"scanlets_to_run" yaml:"scanlets_to_run"`
-	// }
-
 	ScanResult struct {
 		FamilyName     string    `json:"scanlet_family" yaml:"scanlet_family"`
 		Match          bool      `json:"match" yaml:"match"`
@@ -29,20 +22,15 @@ type (
 
 	Scanlet struct {
 		Name           string      `json:"name" yaml:"name"`
-		HumanReasoning string      `json:"human_output" yaml:"human_output"`
-		OutputRender   string      `json:"output_render" yaml:"output_render"`
+		Description    string      `json:"description" yaml:"description"`
+		OutputRenderer string      `json:"output_renderer" yaml:"output_renderer"`
 		Spec           interface{} `json:"spec" yaml:"spec"`
 	}
 
-	RequestedOutputs struct {
-		RequestedOutputs []string `json:"requested_outputs" yaml:"requested_outputs"`
-	}
-
-	OutputType struct {
-		Name        string `json:"name" yaml:"name"`
-		Description string `json:"description" yaml:"description"`
-		ToFile      string `json:"to_file" yaml:"to_file"`
-		ToStdout    bool   `json:"to_stdout" yaml:"to_stdout"`
+	OutputterConfiguration struct {
+		Name        string      `json:"name" yaml:"name"`
+		Description string      `json:"description" yaml:"description"`
+		Spec        interface{} `json:"spec" yaml:"spec"`
 	}
 
 	DroneBuildOutput struct {
