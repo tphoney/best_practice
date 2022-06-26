@@ -12,7 +12,11 @@ func RunScan(ctx context.Context, scansToRun []string) (scanResults []types.Scan
 	for _, scanToRun := range scansToRun {
 		switch scanToRun {
 		case "golang":
-			golangResults, err := golang.Scan(ctx)
+			golangInput := types.ScanInput{
+				RequestedOutputs: []string{"dronebuild", "bestpractice", "productrecommendation"},
+				RunAll:           true,
+			}
+			golangResults, err := golang.Scan(ctx, golangInput)
 			if err != nil {
 				fmt.Printf("error running golang scan: %s\n", err)
 			}

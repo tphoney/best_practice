@@ -8,16 +8,27 @@ const (
 )
 
 type (
-	Scan struct {
-		FamilyName         string    `json:"scanlet_family" yaml:"scanlet_family"`
-		Match              bool      `json:"match" yaml:"match"`
-		OutputCapabilities []string  `json:"output_capabilities" yaml:"output_capabilities"`
-		Outputs            []Scanlet `json:"outputs" yaml:"outputs"`
+	ScanType struct {
+		FamilyName string
+		ScanTypes  []string
 	}
+
+	ScanInput struct {
+		RequestedOutputs []string `json:"requested_outputs" yaml:"requested_outputs"`
+		RunAll           bool     `json:"run_all" yaml:"run_all"`
+		ScansToRun       []string `json:"scans_to_run" yaml:"scans_to_run"`
+	}
+
+	ScanResult struct {
+		FamilyName     string    `json:"scanlet_family" yaml:"scanlet_family"`
+		Match          bool      `json:"match" yaml:"match"`
+		ScansRun       []string  `json:"scans_run" yaml:"scans_run"`
+		ScanletResults []Scanlet `json:"outputs" yaml:"outputs"`
+	}
+
 	Scanlet struct {
 		Name           string      `json:"scanlet_family" yaml:"scanlet_family"`
 		HumanReasoning string      `json:"human_output" yaml:"human_output"`
-		Enabled        bool        `json:"enabled" yaml:"enabled"`
 		OutputRender   string      `json:"output_render" yaml:"output_render"`
 		Spec           interface{} `json:"spec" yaml:"spec"`
 	}
@@ -28,6 +39,7 @@ type (
 
 	BestPracticeOutput struct {
 		Command string `json:"command" yaml:"command"`
+		Url     string `json:"url" yaml:"url"`
 	}
 
 	ProductRecommendationOutput struct {
