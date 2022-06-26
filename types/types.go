@@ -1,23 +1,24 @@
 package types
 
-const (
-	// output plugin names
-	OutputNameDroneBuild        = "dronebuild"
-	OutputBestPractice          = "bestpractice"
-	OutputProductRecommendation = "productrecommendation"
-)
+import "context"
 
 type (
-	ScanType struct {
-		FamilyName string
-		ScanTypes  []string
+	Scanner interface {
+		Scan(ctx context.Context, RequestedOutputs []string) (scanResults []Scanlet, err error)
+		Name() string
 	}
 
-	ScanInput struct {
-		RequestedOutputs []string `json:"requested_outputs" yaml:"requested_outputs"`
-		RunAll           bool     `json:"run_all" yaml:"run_all"`
-		ScansToRun       []string `json:"scans_to_run" yaml:"scans_to_run"`
+	Outputter interface {
+		Output(ctx context.Context, scanResults []Scanlet) error
+		Name() string
 	}
+
+	// ScanInput struct {
+	// 	FamilyName       string
+	// 	RequestedOutputs []string `json:"requested_outputs" yaml:"requested_outputs"`
+	// 	RunAll           bool     `json:"run_all" yaml:"run_all"`
+	// 	ScanletsToRun    []string `json:"scanlets_to_run" yaml:"scanlets_to_run"`
+	// }
 
 	ScanResult struct {
 		FamilyName     string    `json:"scanlet_family" yaml:"scanlet_family"`
@@ -27,10 +28,21 @@ type (
 	}
 
 	Scanlet struct {
-		Name           string      `json:"scanlet_family" yaml:"scanlet_family"`
+		Name           string      `json:"name" yaml:"name"`
 		HumanReasoning string      `json:"human_output" yaml:"human_output"`
 		OutputRender   string      `json:"output_render" yaml:"output_render"`
 		Spec           interface{} `json:"spec" yaml:"spec"`
+	}
+
+	RequestedOutputs struct {
+		RequestedOutputs []string `json:"requested_outputs" yaml:"requested_outputs"`
+	}
+
+	OutputType struct {
+		Name        string `json:"name" yaml:"name"`
+		Description string `json:"description" yaml:"description"`
+		ToFile      string `json:"to_file" yaml:"to_file"`
+		ToStdout    bool   `json:"to_stdout" yaml:"to_stdout"`
 	}
 
 	DroneBuildOutput struct {
