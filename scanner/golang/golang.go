@@ -11,27 +11,43 @@ import (
 )
 
 type scannerConfig struct {
-	scannerName   string
-	scanletsToRun []string
-	runAll        bool
+	name        string
+	description string
+	checksToRun []string
+	runAll      bool
 }
 
 const (
 	goModLocation  = "./go.mod"
 	goLintLocation = "./.golangci.yml"
+	Name           = "golang"
+	ModCheckName   = "go_mod"
+	LintCheckName  = "go_lint"
 )
 
-func New() (types.Scanner, error) {
+func New(opts ...Option) (types.Scanner, error) {
 	sc := new(scannerConfig)
-	sc.scannerName = "golang"
-	sc.scanletsToRun = []string{"go_mod", "go_lint"}
+	sc.name = Name
+	sc.description = "checks for various go related best practices"
 	sc.runAll = true
+	// apply options
+	for _, opt := range opts {
+		opt(sc)
+	}
 
 	return sc, nil
 }
 
 func (sc *scannerConfig) Name() string {
-	return string(sc.scannerName)
+	return sc.name
+}
+
+func (sc *scannerConfig) Description() string {
+	return sc.description
+}
+
+func (sc *scannerConfig) AvailableChecks() []string {
+	return []string{ModCheckName, LintCheckName}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -43,14 +59,14 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	}
 	goModFile.Close()
 	// check the mod file
-	if sc.runAll || slices.Contains(requestedOutputs, "go_mod") {
+	if sc.runAll || slices.Contains(requestedOutputs, ModCheckName) {
 		match, outputResults := modCheck()
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	// check for go linter
-	if sc.runAll || slices.Contains(requestedOutputs, "go_lint") {
+	if sc.runAll || slices.Contains(requestedOutputs, LintCheckName) {
 		match, lintResult := lintCheck()
 		if match {
 			returnVal = append(returnVal, lintResult...)
@@ -66,10 +82,11 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 	_, err := os.Open(goModLocation)
 	if err == nil {
 		droneBuildResult := types.Scanlet{
-			Name:           "go_mod",
+			Name:           ModCheckName,
+			ScannerFamily:  Name,
 			Description:    "run go mod",
 			OutputRenderer: dronebuild.Name,
-			Spec: types.DroneBuildOutput{
+			Spec: dronebuild.DroneBuildOutput{
 				RawYaml: `  - name: go mod
   image: golang:1
   commands:
@@ -79,10 +96,11 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 		}
 		outputResults = append(outputResults, droneBuildResult)
 		bestPracticeResult := types.Scanlet{
-			Name:           "go_mod",
+			Name:           ModCheckName,
+			ScannerFamily:  Name,
 			Description:    "make sure your go mod file is up to date",
 			OutputRenderer: bestpractice.Name,
-			Spec: types.BestPracticeOutput{
+			Spec: bestpractice.BestPracticeOutput{
 				Command: "go mod tidy",
 				Url:     "https://go.dev/ref/mod#go-mod-tidy",
 			},
@@ -98,10 +116,11 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 	_, err := os.Open(goLintLocation)
 	if err != nil {
 		droneBuildResult := types.Scanlet{
-			Name:           "go_lint",
+			Name:           LintCheckName,
+			ScannerFamily:  Name,
 			Description:    "run go lint as part of the build",
 			OutputRenderer: dronebuild.Name,
-			Spec: types.DroneBuildOutput{
+			Spec: dronebuild.DroneBuildOutput{
 				RawYaml: `  - name: golangci-lint
   image: golangci/golangci-lint
   commands:
@@ -110,10 +129,11 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 		}
 		outputResults = append(outputResults, droneBuildResult)
 		bestPracticeResult := types.Scanlet{
-			Name:           "go_lint",
+			Name:           LintCheckName,
+			ScannerFamily:  Name,
 			Description:    "go lint teaches you to write better code",
 			OutputRenderer: bestpractice.Name,
-			Spec: types.BestPracticeOutput{
+			Spec: bestpractice.BestPracticeOutput{
 				Command: "golangci-lint run",
 				Url:     "https://golangci-lint.run.googlesource.com/golangci-lint",
 			},

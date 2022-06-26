@@ -11,17 +11,24 @@ const (
 	Name = "best practice"
 )
 
-type outputterConfig struct {
-	name         string
-	description  string
-	stdOutput    bool
-	outputToFile string
-}
+type (
+	BestPracticeOutput struct {
+		Command string `json:"command" yaml:"command"`
+		Url     string `json:"url" yaml:"url"`
+	}
+
+	outputterConfig struct {
+		name         string
+		description  string
+		stdOutput    bool
+		outputToFile string
+	}
+)
 
 func New(opts ...Option) (types.Outputter, error) {
 	oc := new(outputterConfig)
 	oc.name = Name
-	oc.description = "Gives some real world examples of how to improve your code"
+	oc.description = "Gives some real world examples of best practices"
 	// apply options
 	for _, opt := range opts {
 		opt(oc)
@@ -32,6 +39,10 @@ func New(opts ...Option) (types.Outputter, error) {
 
 func (oc outputterConfig) Name() string {
 	return oc.name
+}
+
+func (oc outputterConfig) Description() string {
+	return oc.description
 }
 
 func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanlet) error {
@@ -48,7 +59,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	}
 	fmt.Println("Best Practice Results:")
 	for _, result := range bestPracticeResults {
-		bp := result.Spec.(types.BestPracticeOutput)
+		bp := result.Spec.(BestPracticeOutput)
 		fmt.Printf(`- %s: %s
   command to run: "%s"
   url: %s

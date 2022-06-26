@@ -29,6 +29,27 @@ type Args struct {
 
 // Exec executes the plugin.
 func Exec(ctx context.Context, args Args) error {
+	// setup requested scanners
+	if len(args.RequestedScanners) == 0 {
+		args.RequestedScanners = []string{golang.Name}
+	}
+	scanners := make([]types.Scanner, 0)
+	for _, scannerName := range args.RequestedScanners {
+		switch scannerName {
+		case golang.Name:
+			// create golang scanner
+			golang, err := golang.New()
+			if err != nil {
+				return err
+			}
+			scanners = append(scanners, golang)
+		default:
+			fmt.Printf("unknown scanner: %s\n", scannerName)
+		}
+	}
+	if len(scanners) == 0 {
+		return fmt.Errorf("no scanners requested")
+	}
 	// setup requested outputs
 	if len(args.RequestedOutputs) == 0 {
 		args.RequestedOutputs = []string{dronebuild.Name, bestpractice.Name}
@@ -49,15 +70,19 @@ func Exec(ctx context.Context, args Args) error {
 	if len(outputters) == 0 {
 		return fmt.Errorf("no outputters selected")
 	}
-	// create golang scanner
-	golang, err := golang.New()
-	if err != nil {
-		return err
+
+	fmt.Println("scanners used:")
+	for i := range scanners {
+		fmt.Printf("%s - %s\n", scanners[i].Name(), scanners[i].Description())
 	}
-	scanResults, scanErr := scanner.RunScanners(ctx, []types.Scanner{golang}, args.RequestedOutputs)
+	scanResults, scanErr := scanner.RunScanners(ctx, scanners, args.RequestedOutputs)
 	if scanErr != nil {
 		fmt.Printf("error running scan failed: %s\n", scanErr)
 		return scanErr
+	}
+	fmt.Println("outputs used:")
+	for i := range outputters {
+		fmt.Printf("%s - %s\n", outputters[i].Name(), outputters[i].Description())
 	}
 	// run output engine
 	outputErr := outputter.RunOutput(ctx, outputters, scanResults)

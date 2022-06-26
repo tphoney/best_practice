@@ -12,12 +12,18 @@ const (
 	Name = "drone build"
 )
 
-type outputterConfig struct {
-	name         string
-	description  string
-	stdOutput    bool
-	outputToFile string
-}
+type (
+	DroneBuildOutput struct {
+		RawYaml string `json:"raw_yaml" yaml:"raw_yaml"`
+	}
+
+	outputterConfig struct {
+		name         string
+		description  string
+		stdOutput    bool
+		outputToFile string
+	}
+)
 
 func New(opts ...Option) (types.Outputter, error) {
 	oc := new(outputterConfig)
@@ -34,6 +40,11 @@ func New(opts ...Option) (types.Outputter, error) {
 func (oc outputterConfig) Name() string {
 	return oc.name
 }
+
+func (oc outputterConfig) Description() string {
+	return oc.description
+}
+
 func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanlet) error {
 	var results []types.Scanlet
 	// iterate over enabled outputs
@@ -64,8 +75,9 @@ platform:
 
 steps:
 `
+	// add the steps to the build file
 	for _, result := range results {
-		dbo := result.Spec.(types.DroneBuildOutput)
+		dbo := result.Spec.(DroneBuildOutput)
 		buildOutput += fmt.Sprintln(dbo.RawYaml)
 	}
 
