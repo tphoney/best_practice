@@ -13,7 +13,7 @@ const (
 )
 
 type (
-	DroneBuildOutput struct {
+	OutputFields struct {
 		RawYaml string `json:"raw_yaml" yaml:"raw_yaml"`
 	}
 
@@ -54,7 +54,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 		}
 	}
 	// lets render the best practice results to stdout
-	if len(results) <= 0 {
+	if len(results) == 0 {
 		return nil
 	}
 	// lets explain what we added to the drone build
@@ -77,7 +77,7 @@ steps:
 `
 	// add the steps to the build file
 	for _, result := range results {
-		dbo := result.Spec.(DroneBuildOutput)
+		dbo := result.Spec.(OutputFields)
 		buildOutput += fmt.Sprintln(dbo.RawYaml)
 	}
 
