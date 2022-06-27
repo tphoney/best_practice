@@ -3,13 +3,15 @@ package dronebuild
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/types"
 )
 
 const (
-	Name = "drone build"
+	Name     = "drone build"
+	FileName = ".drone.yml.new"
 )
 
 type (
@@ -18,10 +20,11 @@ type (
 	}
 
 	outputterConfig struct {
-		name         string
-		description  string
-		stdOutput    bool
-		outputToFile string
+		name             string
+		description      string
+		stdOutput        bool
+		workingDirectory string
+		outputToFile     bool
 	}
 )
 
@@ -59,7 +62,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	}
 	// lets explain what we added to the drone build
 	fmt.Println("")
-	fmt.Printf("Created a new Drone Build file '%s' with:\n", oc.outputToFile)
+	fmt.Println("Added the following steps to the Drone build file:")
 	for _, result := range results {
 		fmt.Printf("- %s\n", result.Description)
 	}
@@ -70,8 +73,8 @@ type: docker
 name: default
 
 platform:
-	os: linux
-	arch: amd64
+  os: linux
+  arch: amd64
 
 steps:
 `
@@ -82,13 +85,16 @@ steps:
 	}
 
 	if oc.stdOutput {
+		fmt.Printf("Drone build file:\n%s\n", buildOutput)
 		fmt.Println(buildOutput)
 	}
-	if oc.outputToFile != "" {
-		err := outputter.WriteToFile(oc.outputToFile, buildOutput)
+	if oc.outputToFile {
+		fmt.Printf("Created a new Drone Build file '%s'\n", filepath.Join(oc.workingDirectory, FileName))
+		err := outputter.WriteToFile(filepath.Join(oc.workingDirectory, FileName), buildOutput)
 		if err != nil {
 			return err
 		}
 	}
+	fmt.Println("")
 	return nil
 }

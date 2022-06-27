@@ -3,6 +3,7 @@ package golang
 import (
 	"context"
 	"os"
+	"path/filepath"
 
 	"github.com/tphoney/best_practice/outputter/bestpractice"
 	"github.com/tphoney/best_practice/outputter/dronebuild"
@@ -11,15 +12,16 @@ import (
 )
 
 type scannerConfig struct {
-	name        string
-	description string
-	checksToRun []string
-	runAll      bool
+	name             string
+	description      string
+	workingDirectory string
+	checksToRun      []string
+	runAll           bool
 }
 
 const (
-	goModLocation  = "./go.mod"
-	goLintLocation = "./.golangci.yml"
+	goModLocation  = "go.mod"
+	goLintLocation = ".golangci.yml"
 	Name           = "golang"
 	ModCheckName   = "go_mod"
 	LintCheckName  = "go_lint"
@@ -52,22 +54,21 @@ func (sc *scannerConfig) AvailableChecks() []string {
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
 	// lets look for a go.mod file in the directory
-	goModFile, err := os.Open(goModLocation)
+	_, err = os.Stat(filepath.Join(sc.workingDirectory, goModLocation))
 	if err != nil {
-		// nothing to see here
-		return returnVal, err
+		// nothing to see here, lets leave
+		return returnVal, nil
 	}
-	goModFile.Close()
 	// check the mod file
 	if sc.runAll || slices.Contains(requestedOutputs, ModCheckName) {
-		match, outputResults := modCheck()
+		match, outputResults := sc.modCheck()
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	// check for go linter
 	if sc.runAll || slices.Contains(requestedOutputs, LintCheckName) {
-		match, lintResult := lintCheck()
+		match, lintResult := sc.lintCheck()
 		if match {
 			returnVal = append(returnVal, lintResult...)
 		}
@@ -77,9 +78,9 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	return returnVal, nil
 }
 
-func modCheck() (match bool, outputResults []types.Scanlet) {
+func (sc *scannerConfig) modCheck() (match bool, outputResults []types.Scanlet) {
 	// if go mod file does exist
-	_, err := os.Open(goModLocation)
+	_, err := os.Stat(filepath.Join(sc.workingDirectory, goModLocation))
 	if err == nil {
 		droneBuildResult := types.Scanlet{
 			Name:           ModCheckName,
@@ -88,10 +89,10 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 			OutputRenderer: dronebuild.Name,
 			Spec: dronebuild.OutputFields{
 				RawYaml: `  - name: go mod
-  image: golang:1
-  commands:
-    - go mod tidy
-	- diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
+    image: golang:1
+    commands:
+      - go mod tidy
+      - diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
@@ -111,9 +112,9 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 	return false, outputResults
 }
 
-func lintCheck() (match bool, outputResults []types.Scanlet) {
+func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet) {
 	// if golang lint file does exist
-	_, err := os.Open(goLintLocation)
+	_, err := os.Stat(filepath.Join(sc.workingDirectory, goLintLocation))
 	if err != nil {
 		droneBuildResult := types.Scanlet{
 			Name:           LintCheckName,
@@ -122,9 +123,9 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 			OutputRenderer: dronebuild.Name,
 			Spec: dronebuild.OutputFields{
 				RawYaml: `  - name: golangci-lint
-  image: golangci/golangci-lint
-  commands:
-    - golangci-lint run --timeout 500s`,
+    image: golangci/golangci-lint
+    commands:
+      - golangci-lint run --timeout 500s`,
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
