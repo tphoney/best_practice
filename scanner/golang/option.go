@@ -21,3 +21,9 @@ func WithChecksToRun(i []string) Option {
 		}
 	}
 }
+
+func WithWorkingDirectory(i string) Option {
+	return func(p *scannerConfig) {
+		p.workingDirectory = i
+	}
+}

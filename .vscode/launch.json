@@ -13,6 +13,16 @@
             "env": {
                 "PLUGIN_USERNAME": "TP",
             },
-          },
+        },
+        {
+            "name": "run scan set working directory",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "env": {
+                "PLUGIN_WORKING_DIRECTORY": "/home/tp/workspace/drone-snyk",
+            },
+        },
     ]
 }

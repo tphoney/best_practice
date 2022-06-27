@@ -7,6 +7,7 @@ package plugin
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/outputter/bestpractice"
@@ -25,11 +26,20 @@ type Args struct {
 
 	RequestedScanners []string `envconfig:"PLUGIN_REQUESTED_SCANNERS"`
 	RequestedOutputs  []string `envconfig:"PLUGIN_REQUESTED_OUTPUTS"`
+	WorkingDirectory  string   `envconfig:"PLUGIN_WORKING_DIRECTORY"`
 }
 
 // Exec executes the plugin.
 func Exec(ctx context.Context, args *Args) error {
 	fmt.Println("==========================")
+	// setup the base directory
+	if args.WorkingDirectory == "" {
+		args.WorkingDirectory = os.Getenv("DRONE_WORKSPACE")
+		if args.WorkingDirectory == "" {
+			args.WorkingDirectory, _ = os.Getwd()
+		}
+	}
+	fmt.Println("working directory:", args.WorkingDirectory)
 	// setup requested scanners
 	if len(args.RequestedScanners) == 0 {
 		args.RequestedScanners = []string{golang.Name}
@@ -39,7 +49,7 @@ func Exec(ctx context.Context, args *Args) error {
 		switch scannerName {
 		case golang.Name:
 			// create golang scanner
-			g, err := golang.New()
+			g, err := golang.New(golang.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
@@ -59,7 +69,7 @@ func Exec(ctx context.Context, args *Args) error {
 	for _, outputName := range args.RequestedOutputs {
 		switch outputName {
 		case dronebuild.Name:
-			db, _ := dronebuild.New(dronebuild.WithOutputToFile(".drone.yml.new"), dronebuild.WithStdOutput(false))
+			db, _ := dronebuild.New(dronebuild.WithWorkingDirectory(args.WorkingDirectory), dronebuild.WithStdOutput(false), dronebuild.WithOutputToFile(true))
 			outputters = append(outputters, db)
 		case bestpractice.Name:
 			bp, _ := bestpractice.New(bestpractice.WithStdOutput(true))
