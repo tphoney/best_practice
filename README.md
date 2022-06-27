@@ -10,6 +10,10 @@ And the following output formats:
 - Drone build file creation
 - best practice report
 
+Example output:
+
+<img width="447" alt="image" src="https://user-images.githubusercontent.com/10402706/175973905-0eaa76f9-5d9e-4f4e-8305-03c1021169b0.png">
+
 ## Usage
 
 There are 4 ways to use this project:
