@@ -28,9 +28,11 @@ Download the Binaries from the release section. Then, you can use it as a cli to
 
 ### Using the container locally
 
+You can use a container locally. This will run it against your current working directory.
+
 ```bash
 docker pull tphoney/best_practice
-docker run -it --rm -v $(pwd):/best_practice tphoney/best_practice
+docker run -it --rm -v $(pwd):/plugin -e PLUGIN_WORKING_DIRECTORY=/plugin tphoney/best_practice
 ```
 
 ### Using it in your drone build
