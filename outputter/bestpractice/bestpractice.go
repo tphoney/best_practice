@@ -12,9 +12,9 @@ const (
 )
 
 type (
-	BestPracticeOutput struct {
+	OutputFields struct {
 		Command string `json:"command" yaml:"command"`
-		Url     string `json:"url" yaml:"url"`
+		HelpURL string `json:"url" yaml:"url"`
 	}
 
 	outputterConfig struct {
@@ -54,16 +54,16 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 		}
 	}
 	// lets render the best practice results to stdout
-	if len(bestPracticeResults) <= 0 {
+	if len(bestPracticeResults) == 0 {
 		return nil
 	}
 	fmt.Println("Best Practice Results:")
 	for _, result := range bestPracticeResults {
-		bp := result.Spec.(BestPracticeOutput)
+		bp := result.Spec.(OutputFields)
 		fmt.Printf(`- %s: %s
   command to run: "%s"
   url: %s
-`, result.Name, result.Description, bp.Command, bp.Url)
+`, result.Name, result.Description, bp.Command, bp.HelpURL)
 	}
 	fmt.Println("")
 	return nil

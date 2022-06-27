@@ -86,7 +86,7 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 			ScannerFamily:  Name,
 			Description:    "run go mod",
 			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.DroneBuildOutput{
+			Spec: dronebuild.OutputFields{
 				RawYaml: `  - name: go mod
   image: golang:1
   commands:
@@ -100,9 +100,9 @@ func modCheck() (match bool, outputResults []types.Scanlet) {
 			ScannerFamily:  Name,
 			Description:    "make sure your go mod file is up to date",
 			OutputRenderer: bestpractice.Name,
-			Spec: bestpractice.BestPracticeOutput{
+			Spec: bestpractice.OutputFields{
 				Command: "go mod tidy",
-				Url:     "https://go.dev/ref/mod#go-mod-tidy",
+				HelpURL: "https://go.dev/ref/mod#go-mod-tidy",
 			},
 		}
 		outputResults = append(outputResults, bestPracticeResult)
@@ -120,7 +120,7 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 			ScannerFamily:  Name,
 			Description:    "run go lint as part of the build",
 			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.DroneBuildOutput{
+			Spec: dronebuild.OutputFields{
 				RawYaml: `  - name: golangci-lint
   image: golangci/golangci-lint
   commands:
@@ -133,9 +133,9 @@ func lintCheck() (match bool, outputResults []types.Scanlet) {
 			ScannerFamily:  Name,
 			Description:    "go lint teaches you to write better code",
 			OutputRenderer: bestpractice.Name,
-			Spec: bestpractice.BestPracticeOutput{
+			Spec: bestpractice.OutputFields{
 				Command: "golangci-lint run",
-				Url:     "https://golangci-lint.run.googlesource.com/golangci-lint",
+				HelpURL: "https://golangci-lint.run.googlesource.com/golangci-lint",
 			},
 		}
 		outputResults = append(outputResults, bestPracticeResult)

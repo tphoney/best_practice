@@ -28,7 +28,8 @@ type Args struct {
 }
 
 // Exec executes the plugin.
-func Exec(ctx context.Context, args Args) error {
+func Exec(ctx context.Context, args *Args) error {
+	fmt.Println("==========================")
 	// setup requested scanners
 	if len(args.RequestedScanners) == 0 {
 		args.RequestedScanners = []string{golang.Name}
@@ -38,11 +39,11 @@ func Exec(ctx context.Context, args Args) error {
 		switch scannerName {
 		case golang.Name:
 			// create golang scanner
-			golang, err := golang.New()
+			g, err := golang.New()
 			if err != nil {
 				return err
 			}
-			scanners = append(scanners, golang)
+			scanners = append(scanners, g)
 		default:
 			fmt.Printf("unknown scanner: %s\n", scannerName)
 		}
@@ -84,6 +85,7 @@ func Exec(ctx context.Context, args Args) error {
 	for i := range outputters {
 		fmt.Printf("%s - %s\n", outputters[i].Name(), outputters[i].Description())
 	}
+	fmt.Println("==========================")
 	// run output engine
 	outputErr := outputter.RunOutput(ctx, outputters, scanResults)
 	if outputErr != nil {
