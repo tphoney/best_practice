@@ -56,11 +56,11 @@ steps:
     image: plugins/github-release
     settings:
       files:
-        - release/linux/amd64/plugin
-        - release/linux/arm64/plugin
-        - release/darwin/arm64/plugin
-        - release/darwin/arm64/plugin
-        - release/windows/amd64/plugin.exe
+        - release/linux-amd64-plugin
+        - release/linux-arm64-plugin
+        - release/darwin-arm64-plugin
+        - release/darwin-arm64-plugin
+        - release/plugin.exe
       api_key:
         from_secret: github_token
     depends_on:
