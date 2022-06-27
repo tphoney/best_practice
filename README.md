@@ -1,11 +1,35 @@
-A plugin to automating best practice.
+# Best_practice
 
-# Usage
+A plugin/cli tool/container/library for automating best practice in a code repository.
+It has the following scanners:
 
-The following settings changes this plugin's behavior.
+- golang, scanner for golang best practice.
 
-* param1 (optional) does something.
-* param2 (optional) does something different.
+And the following output formats:
+
+- Drone build file creation
+- best practice report
+
+## Usage
+
+There are 4 ways to use this project:
+
+### Using it as a cli tool
+
+Download the Binaries from the release section. Then, you can use it as a cli tool.
+
+```bash
+./best-practice 
+```
+
+### Using the container locally
+
+```bash
+docker pull tphoney/best_practice
+docker run -it --rm -v $(pwd):/best_practice tphoney/best_practice
+```
+
+### Using it in your drone build
 
 Below is an example `.drone.yml` that uses this plugin.
 
@@ -17,14 +41,17 @@ steps:
 - name: run tphoney/best_practice plugin
   image: tphoney/best_practice
   pull: if-not-exists
-  settings:
-    param1: foo
-    param2: bar
 ```
 
-# Building
+### Using it as a library
 
-Build the plugin binary:
+Have a look at the calls in `plugin\plugin.go
+
+## Developer notes
+
+### Building
+
+Build the plugin binaries:
 
 ```text
 scripts/build.sh
@@ -34,19 +61,4 @@ Build the plugin image:
 
 ```text
 docker build -t tphoney/best_practice -f docker/Dockerfile .
-```
-
-# Testing
-
-Execute the plugin from your current working directory:
-
-```text
-docker run --rm -e PLUGIN_PARAM1=foo -e PLUGIN_PARAM2=bar \
-  -e DRONE_COMMIT_SHA=8f51ad7884c5eb69c11d260a31da7a745e6b78e2 \
-  -e DRONE_COMMIT_BRANCH=master \
-  -e DRONE_BUILD_NUMBER=43 \
-  -e DRONE_BUILD_STATUS=success \
-  -w /drone/src \
-  -v $(pwd):/drone/src \
-  tphoney/best_practice
 ```
