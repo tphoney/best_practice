@@ -2,11 +2,14 @@ package golang
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/tphoney/best_practice/outputter/bestpractice"
 	"github.com/tphoney/best_practice/outputter/dronebuild"
+	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
 )
@@ -23,8 +26,10 @@ const (
 	goModLocation  = "go.mod"
 	goLintLocation = ".golangci.yml"
 	Name           = "golang"
-	ModCheckName   = "go_mod"
-	LintCheckName  = "go_lint"
+	ModCheck       = "golang_mod"
+	LintCheck      = "golang_lint"
+	MainCheck      = "golang_main"
+	UnitTestCheck  = "golang_unit_test"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -49,7 +54,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{ModCheckName, LintCheckName}
+	return []string{ModCheck, LintCheck, MainCheck, UnitTestCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -60,21 +65,33 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		return returnVal, nil
 	}
 	// check the mod file
-	if sc.runAll || slices.Contains(requestedOutputs, ModCheckName) {
+	if sc.runAll || slices.Contains(requestedOutputs, ModCheck) {
 		match, outputResults := sc.modCheck()
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	// check for go linter
-	if sc.runAll || slices.Contains(requestedOutputs, LintCheckName) {
+	if sc.runAll || slices.Contains(requestedOutputs, LintCheck) {
 		match, lintResult := sc.lintCheck()
 		if match {
 			returnVal = append(returnVal, lintResult...)
 		}
 	}
-	// find the main.go file
 	// find test files
+	if sc.runAll || slices.Contains(requestedOutputs, UnitTestCheck) {
+		match, testResult := sc.unitTestCheck()
+		if match {
+			returnVal = append(returnVal, testResult...)
+		}
+	}
+	// find the main.go file
+	if sc.runAll || slices.Contains(requestedOutputs, MainCheck) {
+		match, mainResult := sc.mainCheck()
+		if match {
+			returnVal = append(returnVal, mainResult...)
+		}
+	}
 	return returnVal, nil
 }
 
@@ -83,7 +100,7 @@ func (sc *scannerConfig) modCheck() (match bool, outputResults []types.Scanlet) 
 	_, err := os.Stat(filepath.Join(sc.workingDirectory, goModLocation))
 	if err == nil {
 		droneBuildResult := types.Scanlet{
-			Name:           ModCheckName,
+			Name:           ModCheck,
 			ScannerFamily:  Name,
 			Description:    "run go mod",
 			OutputRenderer: dronebuild.Name,
@@ -97,7 +114,7 @@ func (sc *scannerConfig) modCheck() (match bool, outputResults []types.Scanlet) 
 		}
 		outputResults = append(outputResults, droneBuildResult)
 		bestPracticeResult := types.Scanlet{
-			Name:           ModCheckName,
+			Name:           ModCheck,
 			ScannerFamily:  Name,
 			Description:    "make sure your go mod file is up to date",
 			OutputRenderer: bestpractice.Name,
@@ -117,7 +134,7 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 	_, err := os.Stat(filepath.Join(sc.workingDirectory, goLintLocation))
 	if err != nil {
 		droneBuildResult := types.Scanlet{
-			Name:           LintCheckName,
+			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run go lint as part of the build",
 			OutputRenderer: dronebuild.Name,
@@ -130,7 +147,7 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 		}
 		outputResults = append(outputResults, droneBuildResult)
 		bestPracticeResult := types.Scanlet{
-			Name:           LintCheckName,
+			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "go lint teaches you to write better code",
 			OutputRenderer: bestpractice.Name,
@@ -140,6 +157,59 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 			},
 		}
 		outputResults = append(outputResults, bestPracticeResult)
+		return true, outputResults
+	}
+	return false, outputResults
+}
+
+func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet) {
+	matches, err := scanner.WalkMatch(sc.workingDirectory, "main.go")
+	if err == nil && len(matches) > 0 {
+		// we use the first one found
+		mainLocation := strings.TrimPrefix(matches[0], sc.workingDirectory)
+		mainLocation = strings.TrimSuffix(mainLocation, "main.go")
+		if len(mainLocation) == 1 {
+			// dont do anything if main is in the working directory
+			mainLocation = ""
+		} else {
+			mainLocation = "." + mainLocation
+		}
+
+		droneBuildResult := types.Scanlet{
+			Name:           LintCheck,
+			ScannerFamily:  Name,
+			Description:    "run go build",
+			OutputRenderer: dronebuild.Name,
+			Spec: dronebuild.OutputFields{
+				RawYaml: fmt.Sprintf(
+					`  - name: build
+    image: golang:1
+    commands:
+      - go build %s`, mainLocation),
+			},
+		}
+		outputResults = append(outputResults, droneBuildResult)
+		return true, outputResults
+	}
+	return false, outputResults
+}
+
+func (sc *scannerConfig) unitTestCheck() (match bool, outputResults []types.Scanlet) {
+	matches, err := scanner.WalkMatch(sc.workingDirectory, "*_test.go")
+	if err == nil && len(matches) > 0 {
+		droneBuildResult := types.Scanlet{
+			Name:           UnitTestCheck,
+			ScannerFamily:  Name,
+			Description:    "run go unit tests",
+			OutputRenderer: dronebuild.Name,
+			Spec: dronebuild.OutputFields{
+				RawYaml: `  - name: golang unit tests
+    image: golang:1
+    commands:
+      - go test ./...`,
+			},
+		}
+		outputResults = append(outputResults, droneBuildResult)
 		return true, outputResults
 	}
 	return false, outputResults
