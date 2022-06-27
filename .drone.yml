@@ -58,7 +58,7 @@ steps:
       files:
         - release/linux-amd64-plugin
         - release/linux-arm64-plugin
-        - release/darwin-arm64-plugin
+        - release/darwin-amd64-plugin
         - release/darwin-arm64-plugin
         - release/plugin.exe
       api_key:
