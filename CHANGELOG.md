@@ -1,12 +1,17 @@
 # Changelog
 
-## [v0.0.2](https://github.com/tphoney/best_practice/tree/v0.0.2) (2022-06-27)
+## [v0.0.2](https://github.com/tphoney/best_practice/tree/v0.0.2) (2022-06-28)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.0.1...v0.0.2)
 
 **Implemented enhancements:**
 
+- Adding more golang checks [\#4](https://github.com/tphoney/best_practice/pull/4) ([tphoney](https://github.com/tphoney))
 - add working directory as option [\#2](https://github.com/tphoney/best_practice/pull/2) ([tphoney](https://github.com/tphoney))
+
+**Merged pull requests:**
+
+- \(maint\) fix instructions for running the container locally [\#3](https://github.com/tphoney/best_practice/pull/3) ([tphoney](https://github.com/tphoney))
 
 ## [v0.0.1](https://github.com/tphoney/best_practice/tree/v0.0.1) (2022-06-27)
 
