@@ -163,7 +163,7 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 }
 
 func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet) {
-	matches, err := scanner.WalkMatch(sc.workingDirectory, "main.go")
+	matches, err := scanner.FindMatchingFiles(sc.workingDirectory, "main.go")
 	if err == nil && len(matches) > 0 {
 		// we use the first one found
 		mainLocation := strings.TrimPrefix(matches[0], sc.workingDirectory)
@@ -195,7 +195,7 @@ func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet)
 }
 
 func (sc *scannerConfig) unitTestCheck() (match bool, outputResults []types.Scanlet) {
-	matches, err := scanner.WalkMatch(sc.workingDirectory, "*_test.go")
+	matches, err := scanner.FindMatchingFiles(sc.workingDirectory, "*_test.go")
 	if err == nil && len(matches) > 0 {
 		droneBuildResult := types.Scanlet{
 			Name:           UnitTestCheck,
