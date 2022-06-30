@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.1.0](https://github.com/tphoney/best_practice/tree/v0.1.0) (2022-06-30)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.0.2...v0.1.0)
+
+**Implemented enhancements:**
+
+- \(feat\) add javascript scanner [\#5](https://github.com/tphoney/best_practice/pull/5) ([tphoney](https://github.com/tphoney))
+
 ## [v0.0.2](https://github.com/tphoney/best_practice/tree/v0.0.2) (2022-06-28)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.0.1...v0.0.2)
