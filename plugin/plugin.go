@@ -12,6 +12,7 @@ import (
 	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/outputter/bestpractice"
 	"github.com/tphoney/best_practice/outputter/dronebuild"
+	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/golang"
 	"github.com/tphoney/best_practice/scanner/java"
@@ -79,7 +80,7 @@ func Exec(ctx context.Context, args *Args) error {
 	}
 	// setup requested outputs
 	if len(args.RequestedOutputs) == 0 {
-		args.RequestedOutputs = []string{dronebuild.Name, bestpractice.Name}
+		args.RequestedOutputs = outputter.ListOutputterNames()
 	}
 	outputters := make([]types.Outputter, 0)
 	for _, outputName := range args.RequestedOutputs {
@@ -90,6 +91,9 @@ func Exec(ctx context.Context, args *Args) error {
 		case bestpractice.Name:
 			bp, _ := bestpractice.New(bestpractice.WithStdOutput(true))
 			outputters = append(outputters, bp)
+		case outputter.HarnessProduct:
+			hp, _ := harnessproduct.New()
+			outputters = append(outputters, hp)
 		default:
 			fmt.Printf("unknown output: %s", outputName)
 		}

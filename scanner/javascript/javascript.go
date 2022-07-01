@@ -81,9 +81,8 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 	} else {
 		return returnVal, err
 	}
-	// check for build
-	if sc.runAll || slices.Contains(requestedChecks, BuildCheck) {
-		match, outputResults := sc.buildCheck(scriptMap, reactVersion)
+	if sc.runAll || slices.Contains(requestedChecks, TestCheck) {
+		match, outputResults := sc.testCheck(scriptMap, reactVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -94,13 +93,12 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
-	if sc.runAll || slices.Contains(requestedChecks, TestCheck) {
-		match, outputResults := sc.testCheck(scriptMap, reactVersion)
+	if sc.runAll || slices.Contains(requestedChecks, BuildCheck) {
+		match, outputResults := sc.buildCheck(scriptMap, reactVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
-
 	return returnVal, nil
 }
 

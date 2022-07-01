@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/types"
 )
 
 const (
-	Name = "best practice"
+	Name = outputter.BestPractice
 )
 
 type (

@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/outputter/bestpractice"
 	"github.com/tphoney/best_practice/outputter/dronebuild"
+	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
@@ -63,7 +65,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		return returnVal, nil
 	}
 	// check for test folders
-	testMatches, err := scanner.FindMatchingFiles(sc.workingDirectory, "**/test/*.java")
+	testMatches, err := scanner.FindMatchingFolders(sc.workingDirectory, "test")
 	if err != nil || len(testMatches) == 0 {
 		// add a best practice for adding tests
 		bestPracticeResult := types.Scanlet{
@@ -77,6 +79,22 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 			},
 		}
 		returnVal = append(returnVal, bestPracticeResult)
+	}
+	if len(testMatches) > 0 {
+		// recommend test intelligence
+		harnessProductResult := types.Scanlet{
+			Name:           "test_intelligence",
+			ScannerFamily:  Name,
+			Description:    "java tests found",
+			OutputRenderer: outputter.HarnessProduct,
+			Spec: harnessproduct.OutputFields{
+				ProductName: "Test Intelligence",
+				URL:         "https://harness.io/blog/continuous-integration/test-intelligence/",
+				Explanation: "Test Intelligence reduces the amount of time spent running tests by intelligently running only the necessary tests.",
+				Why:         "Detected Java Junit tests",
+			},
+		}
+		returnVal = append(returnVal, harnessProductResult)
 	}
 	// check for the various build systems
 	if sc.runAll || slices.Contains(requestedOutputs, BuildSystemCheck) {

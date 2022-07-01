@@ -1,37 +1,36 @@
-package dronebuild
+package harnessproduct
 
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/types"
 )
 
 const (
-	Name     = outputter.DroneBuildMaker
-	FileName = ".drone.yml.new"
+	Name = outputter.HarnessProduct
 )
 
 type (
 	OutputFields struct {
-		RawYaml string `json:"raw_yaml" yaml:"raw_yaml"`
+		ProductName string `json:"product_name"`
+		URL         string `json:"url"`
+		Explanation string `json:"explanation"`
+		Why         string `json:"why"`
 	}
 
 	outputterConfig struct {
 		name             string
 		description      string
-		stdOutput        bool
 		workingDirectory string
-		outputToFile     bool
 	}
 )
 
 func New(opts ...Option) (types.Outputter, error) {
 	oc := new(outputterConfig)
 	oc.name = Name
-	oc.description = "Creates a Drone build file"
+	oc.description = "Shows harness product recommendations"
 	// apply options
 	for _, opt := range opts {
 		opt(oc)
@@ -60,39 +59,16 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	if len(results) == 0 {
 		return nil
 	}
-	// lets explain what we added to the drone build
-	fmt.Println("Drone Build Generator\n\nAdded the following to the drone build:")
-	for _, result := range results {
-		fmt.Printf("- %s\n", result.Description)
-	}
-	fmt.Println("")
-
-	buildOutput := `kind: pipeline
-type: docker
-name: default
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-`
+	productOutput := "Product Recommendations\n"
 	// add the steps to the build file
 	for _, result := range results {
 		dbo := result.Spec.(OutputFields)
-		buildOutput += fmt.Sprintln(dbo.RawYaml)
+		productOutput += fmt.Sprintf(
+			`- %s
+  URL: %s
+  Explanation: %s
+  Why: %s`, dbo.ProductName, dbo.URL, dbo.Explanation, dbo.Why)
 	}
-
-	if oc.stdOutput {
-		fmt.Printf("Drone build file:\n%s\n", buildOutput)
-		fmt.Println(buildOutput)
-	}
-	if oc.outputToFile {
-		fmt.Printf("Created a new Drone Build file '%s'\n", filepath.Join(oc.workingDirectory, FileName))
-		err := outputter.WriteToFile(filepath.Join(oc.workingDirectory, FileName), buildOutput)
-		if err != nil {
-			return err
-		}
-	}
+	fmt.Println(productOutput)
 	return nil
 }
