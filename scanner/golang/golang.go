@@ -25,7 +25,7 @@ type scannerConfig struct {
 const (
 	goModLocation  = "go.mod"
 	goLintLocation = ".golangci.yml"
-	Name           = "golang"
+	Name           = scanner.GolangScannerName
 	ModCheck       = "golang_mod"
 	LintCheck      = "golang_lint"
 	MainCheck      = "golang_main"

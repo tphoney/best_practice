@@ -14,6 +14,7 @@ import (
 	"github.com/tphoney/best_practice/outputter/dronebuild"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/golang"
+	"github.com/tphoney/best_practice/scanner/java"
 	"github.com/tphoney/best_practice/scanner/javascript"
 	"github.com/tphoney/best_practice/types"
 )
@@ -43,7 +44,7 @@ func Exec(ctx context.Context, args *Args) error {
 	fmt.Println("working directory:", args.WorkingDirectory)
 	// setup requested scanners
 	if len(args.RequestedScanners) == 0 {
-		args.RequestedScanners = []string{javascript.Name, golang.Name}
+		args.RequestedScanners = scanner.ListScannersNames()
 	}
 	scanners := make([]types.Scanner, 0)
 	for _, scannerName := range args.RequestedScanners {
@@ -58,6 +59,13 @@ func Exec(ctx context.Context, args *Args) error {
 		case javascript.Name:
 			// create golang scanner
 			g, err := javascript.New(javascript.WithWorkingDirectory(args.WorkingDirectory))
+			if err != nil {
+				return err
+			}
+			scanners = append(scanners, g)
+		case java.Name:
+			// create golang scanner
+			g, err := java.New(java.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
