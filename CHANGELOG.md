@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.2.0](https://github.com/tphoney/best_practice/tree/v0.2.0) (2022-07-01)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.1.0...v0.2.0)
+
+**Implemented enhancements:**
+
+- \(feat\) add product recommender [\#7](https://github.com/tphoney/best_practice/pull/7) ([tphoney](https://github.com/tphoney))
+- \(feat\) add basic java scanner [\#6](https://github.com/tphoney/best_practice/pull/6) ([tphoney](https://github.com/tphoney))
+
 ## [v0.1.0](https://github.com/tphoney/best_practice/tree/v0.1.0) (2022-06-30)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.0.2...v0.1.0)
