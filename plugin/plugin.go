@@ -14,6 +14,7 @@ import (
 	"github.com/tphoney/best_practice/outputter/dronebuild"
 	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
+	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/scanner/golang"
 	"github.com/tphoney/best_practice/scanner/java"
 	"github.com/tphoney/best_practice/scanner/javascript"
@@ -50,27 +51,34 @@ func Exec(ctx context.Context, args *Args) error {
 	scanners := make([]types.Scanner, 0)
 	for _, scannerName := range args.RequestedScanners {
 		switch scannerName {
-		case golang.Name:
+		case scanner.GolangScannerName:
 			// create golang scanner
 			g, err := golang.New(golang.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
 			scanners = append(scanners, g)
-		case javascript.Name:
+		case scanner.JavascriptScannerName:
 			// create golang scanner
-			g, err := javascript.New(javascript.WithWorkingDirectory(args.WorkingDirectory))
+			j, err := javascript.New(javascript.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
-			scanners = append(scanners, g)
-		case java.Name:
+			scanners = append(scanners, j)
+		case scanner.JavaScannerName:
 			// create golang scanner
-			g, err := java.New(java.WithWorkingDirectory(args.WorkingDirectory))
+			j, err := java.New(java.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
-			scanners = append(scanners, g)
+			scanners = append(scanners, j)
+		case scanner.DroneScannerName:
+			// create drone scanner
+			d, err := dronescanner.New(dronescanner.WithWorkingDirectory(args.WorkingDirectory))
+			if err != nil {
+				return err
+			}
+			scanners = append(scanners, d)
 		default:
 			fmt.Printf("unknown scanner: %s\n", scannerName)
 		}
@@ -85,10 +93,10 @@ func Exec(ctx context.Context, args *Args) error {
 	outputters := make([]types.Outputter, 0)
 	for _, outputName := range args.RequestedOutputs {
 		switch outputName {
-		case dronebuild.Name:
+		case outputter.DroneBuildMaker:
 			db, _ := dronebuild.New(dronebuild.WithWorkingDirectory(args.WorkingDirectory), dronebuild.WithStdOutput(false), dronebuild.WithOutputToFile(true))
 			outputters = append(outputters, db)
-		case bestpractice.Name:
+		case outputter.BestPractice:
 			bp, _ := bestpractice.New(bestpractice.WithStdOutput(true))
 			outputters = append(outputters, bp)
 		case outputter.HarnessProduct:

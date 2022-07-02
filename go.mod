@@ -7,6 +7,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
+	gopkg.in/yaml.v3 v3.0.1
 )
 
-require golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
+require golang.org/x/sys v0.0.0-20220702020025-31831981b65f // indirect
