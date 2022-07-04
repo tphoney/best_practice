@@ -1,14 +1,23 @@
 # Best_practice
 
-A plugin/cli tool/container/library for automating best practice in a code repository.
+A plugin/cli tool/container/library for automating best practice in a code repository. For example:
+
+- Build a drone yaml file based on the technologies in the repo
+- Give general programming language specific recommendations
+- Recommend other Harness products based on your project
+
 It has the following scanners:
 
-- golang, scanner for golang best practice.
+- Drone scanner, analyses your build file
+- golang scanner, for best practice
+- Java scanner, for best practice
+- Javascript scanner, for best practice
 
 And the following output formats:
 
+- Best practice report
 - Drone build file creation
-- best practice report
+- Harness product recommendations.
 
 Example output:
 
