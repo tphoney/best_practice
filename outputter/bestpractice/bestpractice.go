@@ -29,7 +29,7 @@ type (
 func New(opts ...Option) (types.Outputter, error) {
 	oc := new(outputterConfig)
 	oc.name = Name
-	oc.description = "Gives some real world examples of best practices"
+	oc.description = "Suggests practical changes based on your project layout"
 	// apply options
 	for _, opt := range opts {
 		opt(oc)

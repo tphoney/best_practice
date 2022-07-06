@@ -12,6 +12,7 @@ const (
 	JavascriptScannerName = "javascript"
 	GolangScannerName     = "golang"
 	DroneScannerName      = "drone"
+	DockerScannerName     = "docker"
 )
 
 func RunScanners(ctx context.Context, scannersToRun []types.Scanner, requestedOutputs []string) (scanResults []types.Scanlet, err error) {
@@ -26,5 +27,5 @@ func RunScanners(ctx context.Context, scannersToRun []types.Scanner, requestedOu
 }
 
 func ListScannersNames() []string {
-	return []string{JavaScannerName, JavascriptScannerName, GolangScannerName, DroneScannerName}
+	return []string{JavaScannerName, JavascriptScannerName, GolangScannerName, DroneScannerName, DockerScannerName}
 }

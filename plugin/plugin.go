@@ -14,6 +14,7 @@ import (
 	"github.com/tphoney/best_practice/outputter/dronebuild"
 	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
+	"github.com/tphoney/best_practice/scanner/docker"
 	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/scanner/golang"
 	"github.com/tphoney/best_practice/scanner/java"
@@ -34,7 +35,7 @@ type Args struct {
 }
 
 // Exec executes the plugin.
-func Exec(ctx context.Context, args *Args) error {
+func Exec(ctx context.Context, args *Args) error { // nolint:gocyclo
 	fmt.Println("==========================")
 	// setup the base directory
 	if args.WorkingDirectory == "" {
@@ -79,6 +80,13 @@ func Exec(ctx context.Context, args *Args) error {
 				return err
 			}
 			scanners = append(scanners, d)
+		case scanner.DockerScannerName:
+			// create docker scanner
+			d, err := docker.New(docker.WithWorkingDirectory(args.WorkingDirectory))
+			if err != nil {
+				return err
+			}
+			scanners = append(scanners, d)
 		default:
 			fmt.Printf("unknown scanner: %s\n", scannerName)
 		}
@@ -112,7 +120,7 @@ func Exec(ctx context.Context, args *Args) error {
 
 	fmt.Println("scanners used:")
 	for i := range scanners {
-		fmt.Printf("%s - %s\n", scanners[i].Name(), scanners[i].Description())
+		fmt.Printf("%s\n", scanners[i].Name())
 	}
 	scanResults, scanErr := scanner.RunScanners(ctx, scanners, args.RequestedOutputs)
 	if scanErr != nil {
