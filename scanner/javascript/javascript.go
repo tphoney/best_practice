@@ -26,6 +26,7 @@ const (
 	BuildCheck      = "build_check"
 	TestCheck       = "test_check"
 	LintCheck       = "lint_check"
+	nodeVersion     = "18"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -61,40 +62,29 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 		return returnVal, nil
 	}
 	var scriptMap map[string]interface{}
-	var dependencyMap map[string]interface{}
-	var reactVersion string
 	packageStruct, err := scanner.ReadJSONFile(filepath.Join(sc.workingDirectory, packageLocation))
 	if err == nil {
 		// look for declared scripts
 		if packageStruct["scripts"] != nil {
 			scriptMap = packageStruct["scripts"].(map[string]interface{})
 		}
-		if packageStruct["dependencies"] != nil {
-			dependencyMap = packageStruct["dependencies"].(map[string]interface{})
-			rawReactVersion := dependencyMap["react"].(string)
-			v, versionErr := scanner.ReturnVersionObject(rawReactVersion)
-			if versionErr != nil {
-				fmt.Printf("error parsing react version: %s\n", versionErr.Error())
-			}
-			reactVersion = fmt.Sprint(v.Major())
-		}
 	} else {
 		return returnVal, err
 	}
 	if sc.runAll || slices.Contains(requestedChecks, TestCheck) {
-		match, outputResults := sc.testCheck(scriptMap, reactVersion)
+		match, outputResults := sc.testCheck(scriptMap, nodeVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, LintCheck) {
-		match, outputResults := sc.lintCheck(scriptMap, reactVersion)
+		match, outputResults := sc.lintCheck(scriptMap, nodeVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, BuildCheck) {
-		match, outputResults := sc.buildCheck(scriptMap, reactVersion)
+		match, outputResults := sc.buildCheck(scriptMap, nodeVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
