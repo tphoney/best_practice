@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.3.0](https://github.com/tphoney/best_practice/tree/v0.3.0) (2022-07-06)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.2.0...v0.3.0)
+
+**Implemented enhancements:**
+
+- feat add docker scanner [\#11](https://github.com/tphoney/best_practice/pull/11) ([tphoney](https://github.com/tphoney))
+- \(feat\) adding drone analyser [\#8](https://github.com/tphoney/best_practice/pull/8) ([tphoney](https://github.com/tphoney))
+
+**Fixed bugs:**
+
+- fix node version in javascript [\#9](https://github.com/tphoney/best_practice/pull/9) ([tphoney](https://github.com/tphoney))
+
 ## [v0.2.0](https://github.com/tphoney/best_practice/tree/v0.2.0) (2022-07-01)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.1.0...v0.2.0)

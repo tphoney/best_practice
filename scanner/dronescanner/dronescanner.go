@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/tphoney/best_practice/outputter/bestpractice"
 	"github.com/tphoney/best_practice/scanner"
@@ -27,6 +28,7 @@ const (
 	droneFileLocation       = ".drone.yml"
 	Name                    = scanner.DroneScannerName
 	DroneCheck              = "drone"
+	VolumesCheck            = "volumes"
 	MaximumStepsPerPipeline = 6
 )
 
@@ -52,7 +54,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{DroneCheck}
+	return []string{DroneCheck, VolumesCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -62,17 +64,24 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		// nothing to see here, lets leave
 		return returnVal, nil
 	}
-	droneContents, err := readDroneFile(sc.workingDirectory, droneFileLocation)
+	pipelines, err := readDroneFile(sc.workingDirectory, droneFileLocation)
 	if err != nil {
 		return returnVal, err
 	}
-	// count the number of steps per pipeline
 	// check for build, test, lint, and deploy
 	// check image versions
 	// if we use the docker plugin, make sure we use snyk
-	// if we have multiple go steps / java steps check for shared volumes
+
+	// count the number of steps per pipeline
 	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
-		match, outputResults := droneStepsCheck(droneContents)
+		match, outputResults := droneStepsCheck(pipelines)
+		if match {
+			returnVal = append(returnVal, outputResults...)
+		}
+	}
+	// if we have multiple go steps / java steps check for shared volumes
+	if sc.runAll || slices.Contains(requestedOutputs, VolumesCheck) {
+		match, outputResults := droneVolumesCheck(pipelines)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -80,18 +89,18 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	return returnVal, nil
 }
 
-func droneStepsCheck(droneContents []DronePipeline) (match bool, outputResults []types.Scanlet) {
+func droneStepsCheck(pipelines []DronePipeline) (match bool, outputResults []types.Scanlet) {
 	// iterate over the pipelines
-	for i := range droneContents {
-		if len(droneContents[i].Steps) > MaximumStepsPerPipeline {
+	for i := range pipelines {
+		if len(pipelines[i].Steps) > MaximumStepsPerPipeline {
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
-				Description:    fmt.Sprintf("pipeline '%s' has more than %d steps, split into multiple pipelines", droneContents[i].Name, MaximumStepsPerPipeline),
+				Description:    fmt.Sprintf("pipeline '%s' has more than %d steps, split into multiple pipelines", pipelines[i].Name, MaximumStepsPerPipeline),
 				OutputRenderer: bestpractice.Name,
 				Spec: bestpractice.OutputFields{
 					Command: "",
-					HelpURL: "https://docs.drone.io/yaml/digitalocean/#the-depends_on-attribute",
+					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -101,10 +110,42 @@ func droneStepsCheck(droneContents []DronePipeline) (match bool, outputResults [
 	return match, outputResults
 }
 
-func readDroneFile(workingDir, droneFileLocation string) (bla []DronePipeline, err error) {
+func droneVolumesCheck(pipelines []DronePipeline) (match bool, outputResults []types.Scanlet) {
+	// iterate over the pipelines
+	for i := range pipelines {
+		numberOfGOSteps := 0
+		for j := range pipelines[i].Steps {
+			commands := pipelines[i].Steps[j].Commands
+			for k := range commands {
+				if strings.Contains(commands[k], "go ") {
+					numberOfGOSteps++
+					// dont count multiple go commands in the same step
+					break
+				}
+			}
+		}
+		if numberOfGOSteps > 1 {
+			bestPracticeResult := types.Scanlet{
+				Name:           DroneCheck,
+				ScannerFamily:  Name,
+				Description:    fmt.Sprintf("pipeline '%s' has %d golang steps, use a volume", pipelines[i].Name, numberOfGOSteps),
+				OutputRenderer: bestpractice.Name,
+				Spec: bestpractice.OutputFields{
+					Command: "",
+					HelpURL: "https://docs.drone.io/pipeline/docker/examples/languages/golang/#dependencies",
+				},
+			}
+			outputResults = append(outputResults, bestPracticeResult)
+			match = true
+		}
+	}
+	return match, outputResults
+}
+
+func readDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipeline, err error) {
 	file, fileErr := os.Open(filepath.Join(workingDir, droneFileLocation))
 	if fileErr != nil {
-		return bla, fileErr
+		return pipelines, fileErr
 	}
 	defer file.Close()
 
@@ -120,10 +161,10 @@ func readDroneFile(workingDir, droneFileLocation string) (bla []DronePipeline, e
 		}
 		// we may want to consider an anoymous struct here
 		if yamlErr == nil {
-			bla = append(bla, *myMap)
+			pipelines = append(pipelines, *myMap)
 		}
 	}
-	return bla, err
+	return pipelines, err
 }
 
 // DronePipeline

@@ -8,8 +8,9 @@ A plugin/cli tool/container/library for automating best practice in a code repos
 
 It has the following scanners:
 
+- Docker scanner, for best practice
 - Drone scanner, analyses your build file
-- golang scanner, for best practice
+- Golang scanner, for best practice
 - Java scanner, for best practice
 - Javascript scanner, for best practice
 
