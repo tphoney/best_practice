@@ -9,7 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tphoney/best_practice/outputter/bestpractice"
+	"github.com/tphoney/best_practice/outputter"
+	"github.com/tphoney/best_practice/outputter/buildanalysis"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
@@ -25,7 +26,7 @@ type scannerConfig struct {
 }
 
 const (
-	droneFileLocation       = ".drone.yml"
+	DroneFileLocation       = ".drone.yml"
 	Name                    = scanner.DroneScannerName
 	DroneCheck              = "drone"
 	VolumesCheck            = "volumes"
@@ -59,12 +60,12 @@ func (sc *scannerConfig) AvailableChecks() []string {
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
 	// lets look for a go.mod file in the directory
-	_, err = os.Stat(filepath.Join(sc.workingDirectory, droneFileLocation))
+	_, err = os.Stat(filepath.Join(sc.workingDirectory, DroneFileLocation))
 	if err != nil {
 		// nothing to see here, lets leave
 		return returnVal, nil
 	}
-	pipelines, err := readDroneFile(sc.workingDirectory, droneFileLocation)
+	pipelines, err := ReadDroneFile(sc.workingDirectory, DroneFileLocation)
 	if err != nil {
 		return returnVal, err
 	}
@@ -97,8 +98,8 @@ func droneStepsCheck(pipelines []DronePipeline) (match bool, outputResults []typ
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' has more than %d steps, split into multiple pipelines", pipelines[i].Name, MaximumStepsPerPipeline),
-				OutputRenderer: bestpractice.Name,
-				Spec: bestpractice.OutputFields{
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
 					Command: "",
 					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
 				},
@@ -129,8 +130,8 @@ func droneVolumesCheck(pipelines []DronePipeline) (match bool, outputResults []t
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' has %d golang steps, use a volume", pipelines[i].Name, numberOfGOSteps),
-				OutputRenderer: bestpractice.Name,
-				Spec: bestpractice.OutputFields{
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
 					Command: "",
 					HelpURL: "https://docs.drone.io/pipeline/docker/examples/languages/golang/#dependencies",
 				},
@@ -142,7 +143,7 @@ func droneVolumesCheck(pipelines []DronePipeline) (match bool, outputResults []t
 	return match, outputResults
 }
 
-func readDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipeline, err error) {
+func ReadDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipeline, err error) {
 	file, fileErr := os.Open(filepath.Join(workingDir, droneFileLocation))
 	if fileErr != nil {
 		return pipelines, fileErr
@@ -159,7 +160,7 @@ func readDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipel
 		if errors.Is(yamlErr, io.EOF) {
 			break
 		}
-		// we may want to consider an anoymous struct here
+		// we may want to consider an anonymous struct here
 		if yamlErr == nil {
 			pipelines = append(pipelines, *myMap)
 		}

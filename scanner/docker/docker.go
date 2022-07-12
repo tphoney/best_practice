@@ -3,9 +3,13 @@ package docker
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/tphoney/best_practice/outputter/dronebuild"
+	"github.com/tphoney/best_practice/outputter"
+	"github.com/tphoney/best_practice/outputter/buildanalysis"
+	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
 	"github.com/tphoney/best_practice/scanner"
+	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
 )
@@ -19,9 +23,11 @@ type scannerConfig struct {
 }
 
 const (
-	dockerFilename  = "Dockerfile"
-	Name            = scanner.DockerScannerName
-	DockerFileCheck = "docker file"
+	dockerFilename    = "Dockerfile"
+	Name              = scanner.DockerScannerName
+	DockerBuildCheck  = "docker build"
+	SecurityScanCheck = "security scan"
+	droneCheck        = "drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -46,7 +52,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{DockerFileCheck}
+	return []string{DockerBuildCheck, SecurityScanCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -57,9 +63,17 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		return returnVal, nil
 	}
 
-	if sc.runAll || slices.Contains(requestedOutputs, DockerFileCheck) {
+	if sc.runAll || slices.Contains(requestedOutputs, DockerBuildCheck) {
 		outputResults := sc.buildCheck(dockerFileMatches)
-		if len(outputResults) > 0 {
+		returnVal = append(returnVal, outputResults...)
+	}
+	if sc.runAll || slices.Contains(requestedOutputs, SecurityScanCheck) {
+		outputResults := sc.securityCheck(dockerFileMatches)
+		returnVal = append(returnVal, outputResults...)
+	}
+	if (sc.runAll || slices.Contains(requestedOutputs, droneCheck)) && len(dockerFileMatches) > 0 {
+		outputResults, err := sc.droneBuildCheck()
+		if err == nil {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
@@ -71,11 +85,11 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 	// lets check for the build system
 	for i := range dockerFiles {
 		testResult := types.Scanlet{
-			Name:           DockerFileCheck,
+			Name:           DockerBuildCheck,
 			ScannerFamily:  Name,
 			Description:    "add docker build step",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: fmt.Sprintf(`  - name: build %s
 	image: plugins/docker
 	settings:
@@ -87,17 +101,94 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 		from_secret: docker_username
 	  password:
 		from_secret: docker_password
-	- name: scan
-	  image: drone-plugins/drone-snyk
-	  privileged: true
-	  settings:
-		dockerfile: %s
-		image: organization/docker-image-name 
-		snyk:
-		  from_secret: snyk_token`, dockerFiles[i], dockerFiles[i], dockerFiles[i]),
+`, dockerFiles[i], dockerFiles[i]),
+				Command: fmt.Sprintf("docker build  --rm --no-cache -t organization/docker-image-name:latest -f %s .", dockerFiles[i]),
+				HelpURL: "https://docs.drone.io/reference/pipeline/docker/",
 			},
 		}
 		outputResults = append(outputResults, testResult)
 	}
 	return outputResults
+}
+
+func (sc *scannerConfig) securityCheck(dockerFiles []string) (outputResults []types.Scanlet) {
+	// lets check for the build system
+	for i := range dockerFiles {
+		testResult := types.Scanlet{
+			Name:           DockerBuildCheck,
+			ScannerFamily:  Name,
+			Description:    "run snyk security scan",
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
+				RawYaml: fmt.Sprintf(`  - name: scan image %s
+	image: plugins//drone-snyk
+	privileged: true
+	settings:
+		dockerfile: %s
+		image: organization/docker-image-name 
+		snyk:
+		  from_secret: snyk_token`, dockerFiles[i], dockerFiles[i]),
+				Command: fmt.Sprintf("docker scan  drone-plugins/drone-snyk --file= %s", dockerFiles[i]),
+				HelpURL: "snyk.io/help/",
+			},
+		}
+		outputResults = append(outputResults, testResult)
+	}
+	return outputResults
+}
+
+func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err error) {
+	pipelines, err := dronescanner.ReadDroneFile(sc.workingDirectory, dronescanner.DroneFileLocation)
+	if err != nil {
+		return outputResults, err
+	}
+	// iterate over the pipelines
+	foundDockerPlugin := false
+	foundSnykPlugin := false
+	foundDockerScanCommand := false
+	foundDockerBuildCommand := false
+	for i := range pipelines {
+		for j := range pipelines[i].Steps {
+			if strings.Contains(pipelines[i].Steps[j].Image, "plugins/docker") {
+				foundDockerPlugin = true
+			}
+			if strings.Contains(pipelines[i].Steps[j].Image, "plugins/drone-snyk") {
+				foundSnykPlugin = true
+			}
+			commands := pipelines[i].Steps[j].Commands
+			for k := range commands {
+				if strings.Contains(commands[k], "docker build") {
+					foundDockerBuildCommand = true
+				}
+				if strings.Contains(commands[k], "docker scan") {
+					foundDockerScanCommand = true
+				}
+			}
+		}
+		if !foundDockerPlugin || foundDockerBuildCommand {
+			bestPracticeResult := types.Scanlet{
+				Name:           DockerBuildCheck,
+				ScannerFamily:  Name,
+				Description:    "pipeline '%s' should use the drone docker plugin",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+				},
+			}
+			outputResults = append(outputResults, bestPracticeResult)
+		}
+		if !foundSnykPlugin || foundDockerScanCommand {
+			bestPracticeResult := types.Scanlet{
+				Name:           DockerBuildCheck,
+				ScannerFamily:  Name,
+				Description:    "pipeline '%s' should use the drone snyk plugin",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+				},
+			}
+			outputResults = append(outputResults, bestPracticeResult)
+		}
+	}
+	return outputResults, err
 }

@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tphoney/best_practice/outputter/bestpractice"
-	"github.com/tphoney/best_practice/outputter/dronebuild"
+	"github.com/tphoney/best_practice/outputter"
+	"github.com/tphoney/best_practice/outputter/buildanalysis"
+	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
 	"github.com/tphoney/best_practice/scanner"
+	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
 )
@@ -30,6 +32,7 @@ const (
 	LintCheck      = "golang_lint"
 	MainCheck      = "golang_main"
 	UnitTestCheck  = "golang_unit_test"
+	DroneCheck     = "golang_drone"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -54,7 +57,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{ModCheck, LintCheck, MainCheck, UnitTestCheck}
+	return []string{ModCheck, LintCheck, MainCheck, UnitTestCheck, DroneCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -92,6 +95,12 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 			returnVal = append(returnVal, mainResult...)
 		}
 	}
+	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
+		droneResult, err := sc.droneCheck()
+		if err == nil {
+			returnVal = append(returnVal, droneResult...)
+		}
+	}
 	return returnVal, nil
 }
 
@@ -103,27 +112,18 @@ func (sc *scannerConfig) modCheck() (match bool, outputResults []types.Scanlet) 
 			Name:           ModCheck,
 			ScannerFamily:  Name,
 			Description:    "run go mod",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: go mod
     image: golang:1
     commands:
       - go mod tidy
       - diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
-			},
-		}
-		outputResults = append(outputResults, droneBuildResult)
-		bestPracticeResult := types.Scanlet{
-			Name:           ModCheck,
-			ScannerFamily:  Name,
-			Description:    "make sure your go mod file is up to date",
-			OutputRenderer: bestpractice.Name,
-			Spec: bestpractice.OutputFields{
 				Command: "go mod tidy",
 				HelpURL: "https://go.dev/ref/mod#go-mod-tidy",
 			},
 		}
-		outputResults = append(outputResults, bestPracticeResult)
+		outputResults = append(outputResults, droneBuildResult)
 		return true, outputResults
 	}
 	return false, outputResults
@@ -137,26 +137,17 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run go lint as part of the build",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: golangci-lint
     image: golangci/golangci-lint
     commands:
       - golangci-lint run --timeout 500s`,
-			},
-		}
-		outputResults = append(outputResults, droneBuildResult)
-		bestPracticeResult := types.Scanlet{
-			Name:           LintCheck,
-			ScannerFamily:  Name,
-			Description:    "go lint teaches you to write better code",
-			OutputRenderer: bestpractice.Name,
-			Spec: bestpractice.OutputFields{
 				Command: "golangci-lint run",
 				HelpURL: "https://golangci-lint.run.googlesource.com/golangci-lint",
 			},
 		}
-		outputResults = append(outputResults, bestPracticeResult)
+		outputResults = append(outputResults, droneBuildResult)
 		return true, outputResults
 	}
 	return false, outputResults
@@ -179,13 +170,15 @@ func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet)
 			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run go build",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: fmt.Sprintf(
 					`  - name: build
     image: golang:1
     commands:
       - go build %s`, mainLocation),
+				Command: fmt.Sprintf("go build %s", mainLocation),
+				HelpURL: "https://golang.org/cmd/go",
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
@@ -201,16 +194,102 @@ func (sc *scannerConfig) unitTestCheck() (match bool, outputResults []types.Scan
 			Name:           UnitTestCheck,
 			ScannerFamily:  Name,
 			Description:    "run go unit tests",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: golang unit tests
     image: golang:1
     commands:
       - go test ./...`,
+				Command: "go test ./...",
+				HelpURL: "https://golang.org/cmd/go/#hdr-Testing_tools",
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
 		return true, outputResults
 	}
 	return false, outputResults
+}
+
+func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error) {
+	pipelines, err := dronescanner.ReadDroneFile(sc.workingDirectory, dronescanner.DroneFileLocation)
+	if err != nil {
+		return outputResults, err
+	}
+	// iterate over the pipelines
+	for i := range pipelines {
+		foundGoLint := false
+		foundGoUnit := false
+		foundGoBuild := false
+		foundGoMod := false
+		for j := range pipelines[i].Steps {
+			commands := pipelines[i].Steps[j].Commands
+			for k := range commands {
+				if strings.Contains(commands[k], "go build") {
+					foundGoBuild = true
+				}
+				if strings.Contains(commands[k], "golangci-lint run") {
+					foundGoLint = true
+				}
+				if strings.Contains(commands[k], "go mod tidy") {
+					foundGoMod = true
+				}
+				if strings.Contains(commands[k], "go test") {
+					foundGoUnit = true
+				}
+			}
+		}
+		if !foundGoMod && foundGoBuild {
+			bestPracticeResult := types.Scanlet{
+				Name:           DroneCheck,
+				ScannerFamily:  Name,
+				Description:    fmt.Sprintf("pipeline '%s' should check mod file is up to date", pipelines[i].Name),
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					HelpURL: "https://go.dev/ref/mod#go-mod-tidy",
+					Command: "go mod tidy",
+					RawYaml: `  - name: go mod tidy
+	image: golang:1
+	commands:
+		- go mod tidy
+		- diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
+				},
+			}
+			outputResults = append(outputResults, bestPracticeResult)
+		}
+		if !foundGoLint && foundGoBuild {
+			bestPracticeResult := types.Scanlet{
+				Name:           DroneCheck,
+				ScannerFamily:  Name,
+				Description:    fmt.Sprintf("pipeline '%s' should check go lint", pipelines[i].Name),
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					HelpURL: "https://golangci-lint.run.googlesource.com/golangci-lint",
+					Command: "golangci-lint run",
+					RawYaml: `  - name: golangci-lint
+	image: golangci/golangci-lint
+	commands:
+		- golangci-lint run --timeout 500s`,
+				},
+			}
+			outputResults = append(outputResults, bestPracticeResult)
+		}
+		if !foundGoUnit && foundGoBuild {
+			bestPracticeResult := types.Scanlet{
+				Name:           DroneCheck,
+				ScannerFamily:  Name,
+				Description:    fmt.Sprintf("pipeline '%s' should check go unit tests", pipelines[i].Name),
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					HelpURL: "https://golang.org/cmd/go/#hdr-Testing_tools",
+					Command: "go test ./...",
+					RawYaml: `  - name: go unit tests
+	image: golang:1
+	commands:
+		- go test ./...`,
+				},
+			}
+			outputResults = append(outputResults, bestPracticeResult)
+		}
+	}
+	return outputResults, err
 }

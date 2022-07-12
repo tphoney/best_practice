@@ -1,8 +1,9 @@
-package dronebuild
+package dronebuildmaker
 
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/tphoney/best_practice/outputter"
@@ -10,13 +11,18 @@ import (
 )
 
 const (
-	Name     = outputter.DroneBuildMaker
-	FileName = ".drone.yml.new"
+	Name = outputter.DroneBuildMaker
+)
+
+var (
+	FileName = ".drone.yml"
 )
 
 type (
 	OutputFields struct {
 		RawYaml string `json:"raw_yaml" yaml:"raw_yaml"`
+		Command string `json:"command" yaml:"command"`
+		HelpURL string `json:"help_url" yaml:"help_url"`
 	}
 
 	outputterConfig struct {
@@ -31,7 +37,7 @@ type (
 func New(opts ...Option) (types.Outputter, error) {
 	oc := new(outputterConfig)
 	oc.name = Name
-	oc.description = "Creates a Drone build file"
+	oc.description = "Creates a full Drone build file"
 	// apply options
 	for _, opt := range opts {
 		opt(oc)
@@ -88,6 +94,11 @@ steps:
 		fmt.Println(buildOutput)
 	}
 	if oc.outputToFile {
+		_, existsErr := os.Stat(FileName)
+		if existsErr == nil {
+			// file exists append .new to the file name
+			FileName += ".new"
+		}
 		fmt.Printf("Created a new Drone Build file '%s'\n", filepath.Join(oc.workingDirectory, FileName))
 		err := outputter.WriteToFile(filepath.Join(oc.workingDirectory, FileName), buildOutput)
 		if err != nil {
