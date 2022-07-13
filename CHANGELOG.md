@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.5.0](https://github.com/tphoney/best_practice/tree/v0.5.0) (2022-07-13)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.4.0...v0.5.0)
+
+**Implemented enhancements:**
+
+- rework bestpractice outputter [\#14](https://github.com/tphoney/best_practice/pull/14) ([tphoney](https://github.com/tphoney))
+
 ## [v0.4.0](https://github.com/tphoney/best_practice/tree/v0.4.0) (2022-07-10)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.3.0...v0.4.0)
