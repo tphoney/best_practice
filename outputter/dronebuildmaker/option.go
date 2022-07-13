@@ -1,4 +1,4 @@
-package bestpractice
+package dronebuildmaker
 
 type Option func(*outputterConfig)
 
@@ -8,8 +8,14 @@ func WithStdOutput(stdOutput bool) Option {
 	}
 }
 
-func WithOutputToFile(i string) Option {
+func WithOutputToFile(i bool) Option {
 	return func(p *outputterConfig) {
 		p.outputToFile = i
+	}
+}
+
+func WithWorkingDirectory(i string) Option {
+	return func(p *outputterConfig) {
+		p.workingDirectory = i
 	}
 }

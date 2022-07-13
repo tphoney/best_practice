@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	DroneBuildMaker = "drone build"
-	HarnessProduct  = "harness product"
-	BestPractice    = "best practice"
+	DroneBuildMaker    = "drone build maker"
+	HarnessProduct     = "harness product"
+	DroneBuildAnalysis = "drone build analysis"
 )
 
 func RunOutput(ctx context.Context, outputters []types.Outputter, scanResults []types.Scanlet) (err error) {
@@ -27,5 +27,5 @@ func RunOutput(ctx context.Context, outputters []types.Outputter, scanResults []
 }
 
 func ListOutputterNames() []string {
-	return []string{DroneBuildMaker, HarnessProduct, BestPractice}
+	return []string{DroneBuildMaker, HarnessProduct, DroneBuildAnalysis}
 }

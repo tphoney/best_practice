@@ -1,4 +1,4 @@
-package dronebuild
+package buildanalysis
 
 type Option func(*outputterConfig)
 
@@ -8,14 +8,8 @@ func WithStdOutput(stdOutput bool) Option {
 	}
 }
 
-func WithOutputToFile(i bool) Option {
+func WithOutputToFile(i string) Option {
 	return func(p *outputterConfig) {
 		p.outputToFile = i
-	}
-}
-
-func WithWorkingDirectory(i string) Option {
-	return func(p *outputterConfig) {
-		p.workingDirectory = i
 	}
 }

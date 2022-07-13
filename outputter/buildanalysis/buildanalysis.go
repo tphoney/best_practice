@@ -1,4 +1,4 @@
-package bestpractice
+package buildanalysis
 
 import (
 	"context"
@@ -9,27 +9,28 @@ import (
 )
 
 const (
-	Name = outputter.BestPractice
+	Name = outputter.DroneBuildAnalysis
 )
 
 type (
-	OutputFields struct {
-		Command string `json:"command" yaml:"command"`
-		HelpURL string `json:"url" yaml:"url"`
-	}
-
 	outputterConfig struct {
 		name         string
 		description  string
 		stdOutput    bool
 		outputToFile string
 	}
+
+	OutputFields struct {
+		RawYaml string `json:"raw_yaml" yaml:"raw_yaml"`
+		Command string `json:"command" yaml:"command"`
+		HelpURL string `json:"url" yaml:"url"`
+	}
 )
 
 func New(opts ...Option) (types.Outputter, error) {
 	oc := new(outputterConfig)
 	oc.name = Name
-	oc.description = "Suggests practical changes based on your project layout"
+	oc.description = "Suggests practical changes based on your project layout and build file"
 	// apply options
 	for _, opt := range opts {
 		opt(oc)
@@ -50,7 +51,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	var bestPracticeResults []types.Scanlet
 	// iterate over enabled outputs
 	for _, output := range scanResults {
-		if output.OutputRenderer == Name {
+		if output.OutputRenderer == outputter.DroneBuildAnalysis {
 			bestPracticeResults = append(bestPracticeResults, output)
 		}
 	}
@@ -64,7 +65,9 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 		fmt.Printf(`- %s: %s
   command to run: "%s"
   url: %s
-`, result.Name, result.Description, bp.Command, bp.HelpURL)
+  Drone YAML:
+%s
+`, result.Name, result.Description, bp.Command, bp.HelpURL, bp.RawYaml)
 	}
 	fmt.Println("")
 	return nil

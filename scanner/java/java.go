@@ -4,12 +4,14 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/bestpractice"
-	"github.com/tphoney/best_practice/outputter/dronebuild"
+	"github.com/tphoney/best_practice/outputter/buildanalysis"
+	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
 	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
+	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
 )
@@ -30,6 +32,7 @@ const (
 	Name                = scanner.JavaScannerName
 	BuildSystemCheck    = "build"
 	UnitTestCheck       = "junit"
+	DroneCheck          = "drone"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -54,7 +57,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{BuildSystemCheck, UnitTestCheck}
+	return []string{BuildSystemCheck, UnitTestCheck, DroneCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -72,8 +75,8 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 			Name:           "add_tests",
 			ScannerFamily:  Name,
 			Description:    "a java project should have tests, running them depends on the build system",
-			OutputRenderer: bestpractice.Name,
-			Spec: bestpractice.OutputFields{
+			OutputRenderer: outputter.DroneBuildMaker,
+			Spec: dronebuildmaker.OutputFields{
 				Command: "javac -d /absolute/path/for/compiled/classes -cp /absolute/path/to/junit-4.12.jar /absolute/path/to/TestClassName.java",
 				HelpURL: "some help",
 			},
@@ -97,13 +100,19 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		returnVal = append(returnVal, harnessProductResult)
 	}
 	// check for the various build systems
+	var buildTypes []string
 	if sc.runAll || slices.Contains(requestedOutputs, BuildSystemCheck) {
 		_, outputResults := sc.buildCheck(len(testMatches) == 0)
 		if len(outputResults) > 0 {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
-
+	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
+		outputResults, err := sc.droneCheck(buildTypes)
+		if err == nil {
+			returnVal = append(returnVal, outputResults...)
+		}
+	}
 	return returnVal, nil
 }
 
@@ -115,8 +124,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: test
     image: google/bazel
     commands:
@@ -128,8 +137,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run bazel build",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: bazel build
     image: google/bazel
     commands:
@@ -145,8 +154,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: test
     image: maven
     commands:
@@ -158,8 +167,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run maven build",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: maven build
     image: maven
     commands:
@@ -176,8 +185,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: test
     image: gradle/gradle
     commands:
@@ -189,8 +198,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run gradle build",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: gradle build
 	image: gradle/gradle
 	commands:
@@ -207,8 +216,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: test
 		image: frekele/ant/
 		commands:
@@ -220,8 +229,8 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 			Name:           BuildSystemCheck,
 			ScannerFamily:  Name,
 			Description:    "run ant build",
-			OutputRenderer: dronebuild.Name,
-			Spec: dronebuild.OutputFields{
+			OutputRenderer: dronebuildmaker.Name,
+			Spec: dronebuildmaker.OutputFields{
 				RawYaml: `  - name: ant build
 		image: frekele/ant
 		commands:
@@ -232,4 +241,136 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 		buildType = append(buildType, "gradle")
 	}
 	return buildType, outputResults
+}
+
+func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.Scanlet, err error) {
+	pipelines, err := dronescanner.ReadDroneFile(sc.workingDirectory, dronescanner.DroneFileLocation)
+	if err != nil {
+		return outputResults, err
+	}
+	// iterate over the pipelines
+	foundBazelTest := false
+	foundBazelBuild := false
+	foundMavenTest := false
+	foundMavenBuild := false
+	foundGradleTest := false
+	foundGradleBuild := false
+
+	for i := range pipelines {
+		for j := range pipelines[i].Steps {
+			commands := pipelines[i].Steps[j].Commands
+			for k := range commands {
+				if strings.Contains(commands[k], "bazel test") {
+					foundBazelTest = true
+				}
+				if strings.Contains(commands[k], "bazel build") {
+					foundBazelBuild = true
+				}
+				if strings.Contains(commands[k], "mvn test") {
+					foundMavenTest = true
+				}
+				if strings.Contains(commands[k], "mvn clean install") {
+					foundMavenBuild = true
+				}
+				if strings.Contains(commands[k], "gradlew test") {
+					foundGradleTest = true
+				}
+				if strings.Contains(commands[k], "gradlew clean build") {
+					foundGradleBuild = true
+				}
+			}
+		}
+		if foundBazelTest {
+			testResult := types.Scanlet{
+				Name:           BuildSystemCheck,
+				ScannerFamily:  Name,
+				Description:    "run bazel tests",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: test
+		image: google/bazel
+		commands:
+			- bazel test`,
+				},
+			}
+			outputResults = append(outputResults, testResult)
+		}
+		if foundBazelBuild {
+			buildResult := types.Scanlet{
+				Name:           BuildSystemCheck,
+				ScannerFamily:  Name,
+				Description:    "run bazel build",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: build
+		image: google/bazel
+		commands:
+					- bazel build`,
+				},
+			}
+			outputResults = append(outputResults, buildResult)
+		}
+		if foundMavenTest {
+			buildResult := types.Scanlet{
+				Name:           BuildSystemCheck,
+				ScannerFamily:  Name,
+				Description:    "run maven test",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: test
+			image: maven
+			commands:
+						- mvn test`,
+				},
+			}
+			outputResults = append(outputResults, buildResult)
+		}
+		if foundMavenBuild {
+			buildResult := types.Scanlet{
+				Name:           BuildSystemCheck,
+				ScannerFamily:  Name,
+				Description:    "run maven build",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: build
+			image: maven
+			commands:
+						- mvn clean install`,
+				},
+			}
+			outputResults = append(outputResults, buildResult)
+		}
+		if foundGradleTest {
+			buildResult := types.Scanlet{
+				Name:           BuildSystemCheck,
+				ScannerFamily:  Name,
+				Description:    "run gradle test",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: test
+			image: gradle/gradle
+			commands:
+						- ./gradlew test`,
+				},
+			}
+			outputResults = append(outputResults, buildResult)
+		}
+		if foundGradleBuild {
+			buildResult := types.Scanlet{
+				Name:           BuildSystemCheck,
+				ScannerFamily:  Name,
+				Description:    "run gradle build",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: build
+			image: gradle/gradle
+			commands:
+						- ./gradlew clean build`,
+				},
+			}
+			outputResults = append(outputResults, buildResult)
+		}
+	}
+
+	return outputResults, err
 }
