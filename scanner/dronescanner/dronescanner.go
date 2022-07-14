@@ -29,7 +29,7 @@ const (
 	DroneFileLocation       = ".drone.yml"
 	Name                    = scanner.DroneScannerName
 	DroneCheck              = "drone"
-	VolumesCheck            = "volumes"
+	VolumesCheck            = "drone volumes"
 	MaximumStepsPerPipeline = 6
 )
 

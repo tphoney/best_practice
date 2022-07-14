@@ -25,9 +25,9 @@ type scannerConfig struct {
 const (
 	dockerFilename    = "Dockerfile"
 	Name              = scanner.DockerScannerName
-	DockerBuildCheck  = "docker build"
-	SecurityScanCheck = "security scan"
-	droneCheck        = "drone build"
+	BuildCheck        = "docker build"
+	SecurityScanCheck = "docker security scan"
+	DroneCheck        = "docker drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -52,7 +52,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{DockerBuildCheck, SecurityScanCheck}
+	return []string{BuildCheck, SecurityScanCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -63,7 +63,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		return returnVal, nil
 	}
 
-	if sc.runAll || slices.Contains(requestedOutputs, DockerBuildCheck) {
+	if sc.runAll || slices.Contains(requestedOutputs, BuildCheck) {
 		outputResults := sc.buildCheck(dockerFileMatches)
 		returnVal = append(returnVal, outputResults...)
 	}
@@ -71,7 +71,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		outputResults := sc.securityCheck(dockerFileMatches)
 		returnVal = append(returnVal, outputResults...)
 	}
-	if (sc.runAll || slices.Contains(requestedOutputs, droneCheck)) && len(dockerFileMatches) > 0 {
+	if (sc.runAll || slices.Contains(requestedOutputs, DroneCheck)) && len(dockerFileMatches) > 0 {
 		outputResults, err := sc.droneBuildCheck()
 		if err == nil {
 			returnVal = append(returnVal, outputResults...)
@@ -85,7 +85,7 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 	// lets check for the build system
 	for i := range dockerFiles {
 		testResult := types.Scanlet{
-			Name:           DockerBuildCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "add docker build step",
 			OutputRenderer: dronebuildmaker.Name,
@@ -115,7 +115,7 @@ func (sc *scannerConfig) securityCheck(dockerFiles []string) (outputResults []ty
 	// lets check for the build system
 	for i := range dockerFiles {
 		testResult := types.Scanlet{
-			Name:           DockerBuildCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run snyk security scan",
 			OutputRenderer: dronebuildmaker.Name,
@@ -167,7 +167,7 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 		}
 		if !foundDockerPlugin || foundDockerBuildCommand {
 			bestPracticeResult := types.Scanlet{
-				Name:           DockerBuildCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "pipeline '%s' should use the drone docker plugin",
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -179,7 +179,7 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 		}
 		if !foundSnykPlugin || foundDockerScanCommand {
 			bestPracticeResult := types.Scanlet{
-				Name:           DockerBuildCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "pipeline '%s' should use the drone snyk plugin",
 				OutputRenderer: outputter.DroneBuildAnalysis,
