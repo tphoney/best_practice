@@ -28,11 +28,11 @@ const (
 	goModLocation  = "go.mod"
 	goLintLocation = ".golangci.yml"
 	Name           = scanner.GolangScannerName
-	ModCheck       = "golang_mod"
-	LintCheck      = "golang_lint"
-	MainCheck      = "golang_main"
-	UnitTestCheck  = "golang_unit_test"
-	DroneCheck     = "golang_drone"
+	ModCheck       = "golang mod"
+	LintCheck      = "golang lint"
+	MainCheck      = "golang main"
+	UnitTestCheck  = "golang unit test"
+	DroneCheck     = "golang drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {

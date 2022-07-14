@@ -27,10 +27,10 @@ type scannerConfig struct {
 const (
 	packageLocation = "package.json"
 	Name            = scanner.JavascriptScannerName
-	BuildCheck      = "build_check"
-	TestCheck       = "test_check"
-	LintCheck       = "lint_check"
-	DroneCheck      = "drone_check"
+	BuildCheck      = "javascript build"
+	TestCheck       = "javascript test"
+	LintCheck       = "javascript lint"
+	DroneCheck      = "javascript drone build"
 	nodeVersion     = "18"
 )
 

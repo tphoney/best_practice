@@ -30,9 +30,9 @@ const (
 	gradleSettingsFile  = "settings.gradle"
 	bazelBuildFile      = "BUILD.bazel"
 	Name                = scanner.JavaScannerName
-	BuildSystemCheck    = "build"
-	UnitTestCheck       = "junit"
-	DroneCheck          = "drone"
+	BuildCheck          = "java build"
+	TestCheck           = "java test"
+	DroneCheck          = "java drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -57,7 +57,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{BuildSystemCheck, UnitTestCheck, DroneCheck}
+	return []string{BuildCheck, TestCheck, DroneCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -101,7 +101,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	}
 	// check for the various build systems
 	var buildTypes []string
-	if sc.runAll || slices.Contains(requestedOutputs, BuildSystemCheck) {
+	if sc.runAll || slices.Contains(requestedOutputs, BuildCheck) {
 		_, outputResults := sc.buildCheck(len(testMatches) == 0)
 		if len(outputResults) > 0 {
 			returnVal = append(returnVal, outputResults...)
@@ -121,7 +121,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 	_, err := os.Stat(filepath.Join(sc.workingDirectory, bazelBuildFile))
 	if err == nil {
 		testResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
 			OutputRenderer: dronebuildmaker.Name,
@@ -134,7 +134,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 		}
 		outputResults = append(outputResults, testResult)
 		droneBuildResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run bazel build",
 			OutputRenderer: dronebuildmaker.Name,
@@ -151,7 +151,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 	_, err = os.Stat(filepath.Join(sc.workingDirectory, mavenFolderLocation))
 	if err == nil {
 		testResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
 			OutputRenderer: dronebuildmaker.Name,
@@ -164,7 +164,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 		}
 		outputResults = append(outputResults, testResult)
 		droneBuildResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run maven build",
 			OutputRenderer: dronebuildmaker.Name,
@@ -182,7 +182,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 	_, err = os.Stat(filepath.Join(sc.workingDirectory, gradleSettingsFile))
 	if err == nil {
 		testResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
 			OutputRenderer: dronebuildmaker.Name,
@@ -195,7 +195,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 		}
 		outputResults = append(outputResults, testResult)
 		droneBuildResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run gradle build",
 			OutputRenderer: dronebuildmaker.Name,
@@ -213,7 +213,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 	_, err = os.Stat(filepath.Join(sc.workingDirectory, antBuildFile))
 	if err == nil {
 		testResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
 			OutputRenderer: dronebuildmaker.Name,
@@ -226,7 +226,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 		}
 		outputResults = append(outputResults, testResult)
 		droneBuildResult := types.Scanlet{
-			Name:           BuildSystemCheck,
+			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run ant build",
 			OutputRenderer: dronebuildmaker.Name,
@@ -282,7 +282,7 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 		}
 		if foundBazelTest {
 			testResult := types.Scanlet{
-				Name:           BuildSystemCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "run bazel tests",
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -297,7 +297,7 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 		}
 		if foundBazelBuild {
 			buildResult := types.Scanlet{
-				Name:           BuildSystemCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "run bazel build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -312,7 +312,7 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 		}
 		if foundMavenTest {
 			buildResult := types.Scanlet{
-				Name:           BuildSystemCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "run maven test",
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -327,7 +327,7 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 		}
 		if foundMavenBuild {
 			buildResult := types.Scanlet{
-				Name:           BuildSystemCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "run maven build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -342,7 +342,7 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 		}
 		if foundGradleTest {
 			buildResult := types.Scanlet{
-				Name:           BuildSystemCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "run gradle test",
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -357,7 +357,7 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 		}
 		if foundGradleBuild {
 			buildResult := types.Scanlet{
-				Name:           BuildSystemCheck,
+				Name:           BuildCheck,
 				ScannerFamily:  Name,
 				Description:    "run gradle build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
