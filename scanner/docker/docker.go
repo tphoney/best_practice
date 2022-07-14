@@ -87,7 +87,7 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 		testResult := types.Scanlet{
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
-			Description:    "add docker build step",
+			Description:    "add docker build step, we can upload to acr/dockerhub/ecr/gcr/heroku",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
 				RawYaml: fmt.Sprintf(`  - name: build %s
@@ -103,7 +103,7 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 		from_secret: docker_password
 `, dockerFiles[i], dockerFiles[i]),
 				Command: fmt.Sprintf("docker build  --rm --no-cache -t organization/docker-image-name:latest -f %s .", dockerFiles[i]),
-				HelpURL: "https://docs.drone.io/reference/pipeline/docker/",
+				HelpURL: "https://plugins.drone.io/plugins/docker",
 			},
 		}
 		outputResults = append(outputResults, testResult)

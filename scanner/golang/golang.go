@@ -178,7 +178,7 @@ func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet)
     commands:
       - go build %s`, mainLocation),
 				Command: fmt.Sprintf("go build %s", mainLocation),
-				HelpURL: "https://golang.org/cmd/go",
+				HelpURL: "https://pkg.go.dev/cmd/go#hdr-Build_constraints",
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)

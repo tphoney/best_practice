@@ -201,7 +201,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				Description:    "pipeline '%s' should run npm build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+					HelpURL: "https://docs.npmjs.com/misc/build",
 					RawYaml: fmt.Sprintf(`  - name: run npm build
 					image: node:%s-alpine
 					commands:
@@ -217,7 +217,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				Description:    "pipeline '%s' should run npm lint",
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+					HelpURL: "https://docs.npmjs.com/misc/lint",
 					RawYaml: fmt.Sprintf(`  - name: run npm build
 					image: node:%s-alpine
 					commands:
@@ -233,7 +233,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				Description:    "pipeline '%s' shoul run npm test",
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+					HelpURL: "https://docs.npmjs.com/misc/test",
 					RawYaml: fmt.Sprintf(`  - name: run npm build
 					image: node:%s-alpine
 					commands:
