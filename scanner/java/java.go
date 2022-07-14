@@ -78,7 +78,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 			OutputRenderer: outputter.DroneBuildMaker,
 			Spec: dronebuildmaker.OutputFields{
 				Command: "javac -d /absolute/path/for/compiled/classes -cp /absolute/path/to/junit-4.12.jar /absolute/path/to/TestClassName.java",
-				HelpURL: "some help",
+				HelpURL: "http://users.csc.calpoly.edu/~djanzen/research/TDD08/cdesai/IntroducingJUnit/IntroducingJUnit.html",
 			},
 		}
 		returnVal = append(returnVal, bestPracticeResult)

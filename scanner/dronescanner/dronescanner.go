@@ -69,10 +69,6 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	if err != nil {
 		return returnVal, err
 	}
-	// check for build, test, lint, and deploy
-	// check image versions
-	// if we use the docker plugin, make sure we use snyk
-
 	// count the number of steps per pipeline
 	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
 		match, outputResults := droneStepsCheck(pipelines)
@@ -100,7 +96,6 @@ func droneStepsCheck(pipelines []DronePipeline) (match bool, outputResults []typ
 				Description:    fmt.Sprintf("pipeline '%s' has more than %d steps, split into multiple pipelines", pipelines[i].Name, MaximumStepsPerPipeline),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					Command: "",
 					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
 				},
 			}
@@ -132,8 +127,7 @@ func droneVolumesCheck(pipelines []DronePipeline) (match bool, outputResults []t
 				Description:    fmt.Sprintf("pipeline '%s' has %d golang steps, use a volume", pipelines[i].Name, numberOfGOSteps),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					Command: "",
-					HelpURL: "https://docs.drone.io/pipeline/docker/examples/languages/golang/#dependencies",
+					HelpURL: "https://docs.drone.io/pipeline/docker/syntax/volumes/temporary/",
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -160,7 +154,6 @@ func ReadDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipel
 		if errors.Is(yamlErr, io.EOF) {
 			break
 		}
-		// we may want to consider an anonymous struct here
 		if yamlErr == nil {
 			pipelines = append(pipelines, *myMap)
 		}
