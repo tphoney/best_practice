@@ -25,14 +25,17 @@ type scannerConfig struct {
 }
 
 const (
-	mavenFolderLocation = ".mvn"
+	androidManifest     = "AndroidManifest.xml"
 	antBuildFile        = "build.xml"
-	gradleSettingsFile  = "settings.gradle"
 	bazelBuildFile      = "BUILD.bazel"
-	Name                = scanner.JavaScannerName
-	BuildCheck          = "java build"
-	TestCheck           = "java test"
-	DroneCheck          = "java drone build"
+	gradleSettingsFile  = "settings.gradle"
+	mavenFolderLocation = ".mvn"
+
+	Name         = scanner.JavaScannerName
+	BuildCheck   = "java build"
+	TestCheck    = "java test"
+	AndroidCheck = "java android"
+	DroneCheck   = "java drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -57,7 +60,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{BuildCheck, TestCheck, DroneCheck}
+	return []string{BuildCheck, TestCheck, DroneCheck, AndroidCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -107,8 +110,31 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
+	// check for android
+	foundAndroid := false
+	if sc.runAll || slices.Contains(requestedOutputs, AndroidCheck) {
+		androidMatches, err := scanner.FindMatchingFiles(sc.workingDirectory, androidManifest)
+		if err == nil || len(androidMatches) > 0 {
+			androidScanlet := types.Scanlet{
+				Name:           "android",
+				ScannerFamily:  Name,
+				Description:    "run android specific project tools",
+				OutputRenderer: outputter.DroneBuildMaker,
+				Spec: dronebuildmaker.OutputFields{
+					Command: "sdkmanager --list",
+					HelpURL: "https://developer.android.com/studio/command-line/sdkmanager.html",
+					RawYaml: `  - name: android sdk
+          image: androidsdk/android-31
+	        commands:
+	          - sdkmanager --list`,
+				},
+			}
+			foundAndroid = true
+			returnVal = append(returnVal, androidScanlet)
+		}
+	}
 	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
-		outputResults, err := sc.droneCheck(buildTypes)
+		outputResults, err := sc.droneCheck(buildTypes, foundAndroid)
 		if err == nil {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -243,19 +269,19 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 	return buildType, outputResults
 }
 
-func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.Scanlet, err error) {
+func (sc *scannerConfig) droneCheck(buildTypes []string, hasAndroid bool) (outputResults []types.Scanlet, err error) {
 	pipelines, err := dronescanner.ReadDroneFile(sc.workingDirectory, dronescanner.DroneFileLocation)
 	if err != nil {
 		return outputResults, err
 	}
-	// iterate over the pipelines
 	foundBazelTest := false
 	foundBazelBuild := false
 	foundMavenTest := false
 	foundMavenBuild := false
 	foundGradleTest := false
 	foundGradleBuild := false
-
+	foundAndroidCommands := false
+	// iterate over the pipelines
 	for i := range pipelines {
 		for j := range pipelines[i].Steps {
 			commands := pipelines[i].Steps[j].Commands
@@ -277,6 +303,9 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 				}
 				if strings.Contains(commands[k], "gradlew clean build") {
 					foundGradleBuild = true
+				}
+				if strings.Contains(commands[k], "sdkmanager") || strings.Contains(commands[k], "adb") {
+					foundAndroidCommands = true
 				}
 			}
 		}
@@ -366,6 +395,21 @@ func (sc *scannerConfig) droneCheck(buildTypes []string) (outputResults []types.
 			image: gradle/gradle
 			commands:
 						- ./gradlew clean build`,
+				},
+			}
+			outputResults = append(outputResults, buildResult)
+		}
+		if hasAndroid && !foundAndroidCommands {
+			buildResult := types.Scanlet{
+				Name:           BuildCheck,
+				ScannerFamily:  Name,
+				Description:    "run android tests and builds with the android sdk",
+				OutputRenderer: outputter.DroneBuildAnalysis,
+				Spec: buildanalysis.OutputFields{
+					RawYaml: `  - name: build
+			image: android/sdk
+			commands:
+						- sdkmanager --update --no-prompt --all`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)
