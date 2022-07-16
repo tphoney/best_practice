@@ -9,7 +9,7 @@ import (
 	"github.com/Masterminds/semver"
 )
 
-func FindMatchingFiles(workingDir, pattern string) ([]string, error) {
+func FindMatchingFiles(workingDir, pattern string, ignoreHidden bool) ([]string, error) {
 	var matches []string
 	err := filepath.Walk(workingDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -21,7 +21,15 @@ func FindMatchingFiles(workingDir, pattern string) ([]string, error) {
 		if matched, err := filepath.Match(pattern, filepath.Base(path)); err != nil {
 			return err
 		} else if matched {
-			matches = append(matches, path)
+			if ignoreHidden {
+				// remove workingDir from the path
+				folder := strings.TrimPrefix(path, workingDir)
+				if !strings.Contains(folder, (string(os.PathSeparator) + ".")) {
+					matches = append(matches, path)
+				}
+			} else {
+				matches = append(matches, path)
+			}
 		}
 		return nil
 	})

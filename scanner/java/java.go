@@ -65,7 +65,7 @@ func (sc *scannerConfig) AvailableChecks() []string {
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
 	// lets look for any java files.
-	matches, err := scanner.FindMatchingFiles(sc.workingDirectory, "*.java")
+	matches, err := scanner.FindMatchingFiles(sc.workingDirectory, "*.java", true)
 	if err != nil || len(matches) == 0 {
 		// nothing to see here, lets leave
 		return returnVal, nil
@@ -113,7 +113,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	// check for android
 	foundAndroid := false
 	if sc.runAll || slices.Contains(requestedOutputs, AndroidCheck) {
-		androidMatches, err := scanner.FindMatchingFiles(sc.workingDirectory, androidManifest)
+		androidMatches, err := scanner.FindMatchingFiles(sc.workingDirectory, androidManifest, true)
 		if err == nil || len(androidMatches) > 0 {
 			androidScanlet := types.Scanlet{
 				Name:           "android",

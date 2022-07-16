@@ -94,15 +94,15 @@ steps:
 		fmt.Println(buildOutput)
 	}
 	if oc.outputToFile {
-		_, existsErr := os.Stat(FileName)
-		if existsErr == nil {
+		_, err := os.Stat(filepath.Join(oc.workingDirectory, FileName))
+		if err == nil {
 			// file exists append .new to the file name
 			FileName += ".new"
 		}
 		fmt.Printf("Created a new Drone Build file '%s'\n", filepath.Join(oc.workingDirectory, FileName))
-		err := outputter.WriteToFile(filepath.Join(oc.workingDirectory, FileName), buildOutput)
-		if err != nil {
-			return err
+		writeErr := outputter.WriteToFile(filepath.Join(oc.workingDirectory, FileName), buildOutput)
+		if writeErr != nil {
+			return writeErr
 		}
 	}
 	return nil

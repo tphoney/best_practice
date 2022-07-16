@@ -57,7 +57,7 @@ func (sc *scannerConfig) AvailableChecks() []string {
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
 	// lets look for any java files.
-	dockerFileMatches, err := scanner.FindMatchingFiles(sc.workingDirectory, dockerFilename)
+	dockerFileMatches, err := scanner.FindMatchingFiles(sc.workingDirectory, dockerFilename, true)
 	if err != nil || len(dockerFileMatches) == 0 {
 		// nothing to see here, lets leave
 		return returnVal, nil
