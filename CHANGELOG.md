@@ -1,5 +1,26 @@
 # Changelog
 
+## [v0.6.0](https://github.com/tphoney/best_practice/tree/v0.6.0) (2022-07-16)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.5.0...v0.6.0)
+
+**Implemented enhancements:**
+
+- write a ruby scanner [\#21](https://github.com/tphoney/best_practice/issues/21)
+- Possible enhancements [\#10](https://github.com/tphoney/best_practice/issues/10)
+- \(feat\) add basic ruby scanning [\#24](https://github.com/tphoney/best_practice/pull/24) ([tphoney](https://github.com/tphoney))
+- \(feat\) add android check to java scanner [\#23](https://github.com/tphoney/best_practice/pull/23) ([tphoney](https://github.com/tphoney))
+
+**Fixed bugs:**
+
+- ensure naming standards for checks [\#16](https://github.com/tphoney/best_practice/issues/16)
+- audit all scanlets in scanners [\#15](https://github.com/tphoney/best_practice/issues/15)
+- audit scanlets to provide better info [\#22](https://github.com/tphoney/best_practice/pull/22) ([tphoney](https://github.com/tphoney))
+
+**Merged pull requests:**
+
+- \(maint\) add some semblance of naming to checks [\#20](https://github.com/tphoney/best_practice/pull/20) ([tphoney](https://github.com/tphoney))
+
 ## [v0.5.0](https://github.com/tphoney/best_practice/tree/v0.5.0) (2022-07-13)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.4.0...v0.5.0)

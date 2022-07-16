@@ -9,16 +9,17 @@ A plugin/cli tool/container/library for automating best practice in a code repos
 It has the following scanners:
 
 - Docker scanner, for best practice
-- Drone scanner, analyses your build file
+- Drone scanner, analyses your build file to give you recommendations
 - Golang scanner, for best practice
 - Java scanner, for best practice
 - Javascript scanner, for best practice
+- Ruby scanner, for best practice
 
 And the following output formats:
 
-- Best practice report
-- Drone build file creation
-- Harness product recommendations.
+- Best practice for existing Drone builds
+- Drone build file creation (creates a drone file, or a .drone.yml.new file if you have an existing drone file)
+- Harness product recommendations
 
 Example output:
 
@@ -36,6 +37,15 @@ Download the Binaries from the release section. Then, you can use it as a cli to
 ./best-practice 
 ```
 
+Execute the newly created drone build file
+
+```bash
+# install drone-cli if necessary
+brew install drone-cli
+# execute the drone build
+drone exec .drone.yml
+```
+
 ### Using the container locally
 
 You can use a container locally. This will run it against your current working directory.
@@ -43,6 +53,15 @@ You can use a container locally. This will run it against your current working d
 ```bash
 docker pull tphoney/best_practice
 docker run -it --rm -v $(pwd):/plugin -e PLUGIN_WORKING_DIRECTORY=/plugin tphoney/best_practice
+```
+
+Execute the newly created drone build file
+
+```bash
+# install drone-cli if necessary
+brew install drone-cli
+# execute the drone build
+drone exec .drone.yml
 ```
 
 ### Using it in your drone build
@@ -61,7 +80,20 @@ steps:
 
 ### Using it as a library
 
-Have a look at the calls in `plugin\plugin.go
+Select your scanners and pass it through to the output formatters:
+
+```go
+# set the working directory to the root of your project
+workingDirectory, err := os.Getwd()
+# set your scanners, this uses all of the scanners by default
+requestedScanners = scanner.ListScannersNames()
+# set your output formatters, this uses all of the output formatters by default
+requestesOutputFormatters = output.ListOutputFormattersNames()
+# run the scanners
+scanResults, scanErr := scanner.RunScanners(ctx, requestedScanners, requestesOutputFormatters)
+# run the output formatters
+outputErr := outputter.RunOutput(ctx, outputters, scanResults)
+```
 
 ## Developer notes
 
