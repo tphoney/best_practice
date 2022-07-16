@@ -1,10 +1,9 @@
-package javascript
+package ruby
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
@@ -25,19 +24,18 @@ type scannerConfig struct {
 }
 
 const (
-	packageLocation = "package.json"
-	Name            = scanner.JavascriptScannerName
-	BuildCheck      = "javascript build"
-	TestCheck       = "javascript test"
-	LintCheck       = "javascript lint"
-	DroneCheck      = "javascript drone build"
-	nodeVersion     = "18"
+	Name        = scanner.RubyScannerName
+	BuildCheck  = "ruby build"
+	TestCheck   = "ruby test"
+	LintCheck   = "ruby lint"
+	DroneCheck  = "ruby drone build"
+	rubyVersion = "latest"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
 	sc := new(scannerConfig)
 	sc.name = Name
-	sc.description = "checks for various javascript related best practices"
+	sc.description = "checks for various ruby related best practices"
 	sc.runAll = true
 	// apply options
 	for _, opt := range opts {
@@ -61,41 +59,46 @@ func (sc *scannerConfig) AvailableChecks() []string {
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (returnVal []types.Scanlet, err error) {
 	// lets look for a package file in the directory
-	_, err = os.Stat(filepath.Join(sc.workingDirectory, packageLocation))
-	if err != nil {
+	matches, err := scanner.FindMatchingFiles(sc.workingDirectory, "*.rb", true)
+	if err != nil || len(matches) == 0 {
 		// nothing to see here, lets leave
 		return returnVal, nil
 	}
-	var scriptMap map[string]interface{}
-	packageStruct, err := scanner.ReadJSONFile(filepath.Join(sc.workingDirectory, packageLocation))
-	if err == nil {
-		// look for declared scripts
-		if packageStruct["scripts"] != nil {
-			scriptMap = packageStruct["scripts"].(map[string]interface{})
-		}
-	} else {
-		return returnVal, err
-	}
 	if sc.runAll || slices.Contains(requestedChecks, TestCheck) {
-		match, outputResults := sc.testCheck(scriptMap, nodeVersion)
-		if match {
-			returnVal = append(returnVal, outputResults...)
+		_, testpathErr := os.Stat(fmt.Sprintf("%s/spec", sc.workingDirectory))
+		if testpathErr == nil {
+			droneBuildResult := types.Scanlet{
+				Name:           TestCheck,
+				ScannerFamily:  Name,
+				Description:    "run rspec",
+				OutputRenderer: dronebuildmaker.Name,
+				Spec: dronebuildmaker.OutputFields{
+					RawYaml: fmt.Sprintf(`  - name: run rspec
+		image: ruby:%s
+		commands:
+		  - bundle install
+			- bundle exec rspec spec`, rubyVersion),
+					Command: "bundle exec rspec spec",
+					HelpURL: "https://docs.npmjs.com/misc/test",
+				},
+			}
+			returnVal = append(returnVal, droneBuildResult)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, LintCheck) {
-		match, outputResults := sc.lintCheck(scriptMap, nodeVersion)
+		match, outputResults := sc.lintCheck(rubyVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, BuildCheck) {
-		match, outputResults := sc.buildCheck(scriptMap, nodeVersion)
+		match, outputResults := sc.buildCheck(rubyVersion)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, DroneCheck) {
-		outputResults, err := sc.droneCheck(nodeVersion)
+		outputResults, err := sc.droneCheck(rubyVersion)
 		if err == nil {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -103,70 +106,52 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 	return returnVal, nil
 }
 
-func (sc *scannerConfig) buildCheck(scriptMap map[string]interface{}, nodeVersion string) (match bool, outputResults []types.Scanlet) {
-	if scriptMap["build"] != "" {
-		buildResult := types.Scanlet{
+func (sc *scannerConfig) buildCheck(rubyVersion string) (match bool, outputResults []types.Scanlet) {
+	// do we have a rakefile?
+	rakefileExist, _ := scanner.FindMatchingFiles(sc.workingDirectory, "Rakefile", true)
+	if len(rakefileExist) > 0 {
+		droneBuildResult := types.Scanlet{
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
-			Description:    "run npm build",
+			Description:    "build using rake",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run npm build
-    image: node:%s-alpine
-    commands:
-      - npm run build`, nodeVersion),
-				Command: "npm run build",
-				HelpURL: "https://docs.npmjs.com/misc/build",
+				RawYaml: fmt.Sprintf(`  - name: build with rake
+		image: ruby:%s
+		commands:
+				- bundle install
+				- bundle exec rake `, rubyVersion),
+				Command: "bundle exec rake build",
+				HelpURL: "https://bundler.io/man/bundle-exec.1.html",
 			},
 		}
-		outputResults = append(outputResults, buildResult)
+		outputResults = append(outputResults, droneBuildResult)
 		return true, outputResults
 	}
 	return false, outputResults
 }
 
-func (sc *scannerConfig) lintCheck(scriptMap map[string]interface{}, reactVersion string) (match bool, outputResults []types.Scanlet) {
-	if scriptMap["lint"] != "" {
+func (sc *scannerConfig) lintCheck(rubyVersion string) (match bool, outputResults []types.Scanlet) {
+	rubocopExist, _ := scanner.FindMatchingFiles(sc.workingDirectory, ".rubocop.yml", false)
+	if len(rubocopExist) > 0 {
 		lintResult := types.Scanlet{
 			Name:           LintCheck,
 			ScannerFamily:  Name,
-			Description:    "run npm lint",
+			Description:    "run rubocop",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run npm lint
-    image: node:%s-alpine
-    commands:
-      - npm run lint`, reactVersion),
-				Command: "npm run lint",
-				HelpURL: "https://docs.npmjs.com/misc/lint",
+				RawYaml: fmt.Sprintf(`  - name: run rubocop
+		image: ruby:%s
+		commands:
+				- bundle install
+				- rubocop`, rubyVersion),
+				Command: "rubocop",
+				HelpURL: "https://docs.rubygems.org/rubocop",
 			},
 		}
 		outputResults = append(outputResults, lintResult)
 		return true, outputResults
 	}
-	return false, outputResults
-}
-
-func (sc *scannerConfig) testCheck(scriptMap map[string]interface{}, nodeVersion string) (match bool, outputResults []types.Scanlet) {
-	if scriptMap["test"] != "" {
-		testResult := types.Scanlet{
-			Name:           TestCheck,
-			ScannerFamily:  Name,
-			Description:    "run npm test",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run npm test
-    image: node:%s-alpine
-    commands:
-      - npm run test`, nodeVersion),
-				Command: "npm run test",
-				HelpURL: "https://docs.npmjs.com/misc/test",
-			},
-		}
-		outputResults = append(outputResults, testResult)
-		return true, outputResults
-	}
-
 	return false, outputResults
 }
 
@@ -176,29 +161,29 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 		return outputResults, err
 	}
 	// iterate over the pipelines
-	foundNPMBuild := false
-	foundNPMLint := false
-	foundNPMTest := false
+	foundRubyBuild := false
+	foundRubyLint := false
+	foundRubyTest := false
 	for i := range pipelines {
 		for j := range pipelines[i].Steps {
 			commands := pipelines[i].Steps[j].Commands
 			for k := range commands {
-				if strings.Contains(commands[k], "npm run build") {
-					foundNPMBuild = true
+				if strings.Contains(commands[k], "bundle exec rake") {
+					foundRubyBuild = true
 				}
-				if strings.Contains(commands[k], "npm run lint") {
-					foundNPMLint = true
+				if strings.Contains(commands[k], "rubocop") {
+					foundRubyLint = true
 				}
-				if strings.Contains(commands[k], "npm run test") {
-					foundNPMTest = true
+				if strings.Contains(commands[k], "bundle exec rspec") {
+					foundRubyTest = true
 				}
 			}
 		}
-		if foundNPMBuild {
+		if foundRubyBuild {
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should run npm build",
+				Description:    "pipeline '%s' should run ruby build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/build",
@@ -210,11 +195,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 			}
 			outputResults = append(outputResults, bestPracticeResult)
 		}
-		if foundNPMLint {
+		if foundRubyLint {
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should run npm lint",
+				Description:    "pipeline '%s' should run rubocop",
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/lint",
@@ -226,7 +211,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 			}
 			outputResults = append(outputResults, bestPracticeResult)
 		}
-		if foundNPMTest {
+		if foundRubyTest {
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,

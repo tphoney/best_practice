@@ -19,6 +19,7 @@ import (
 	"github.com/tphoney/best_practice/scanner/golang"
 	"github.com/tphoney/best_practice/scanner/java"
 	"github.com/tphoney/best_practice/scanner/javascript"
+	"github.com/tphoney/best_practice/scanner/ruby"
 	"github.com/tphoney/best_practice/types"
 )
 
@@ -52,41 +53,42 @@ func Exec(ctx context.Context, args *Args) error { // nolint:gocyclo
 	scanners := make([]types.Scanner, 0)
 	for _, scannerName := range args.RequestedScanners {
 		switch scannerName {
+		case scanner.DockerScannerName:
+			d, err := docker.New(docker.WithWorkingDirectory(args.WorkingDirectory))
+			if err != nil {
+				return err
+			}
+			scanners = append(scanners, d)
+		case scanner.DroneScannerName:
+			d, err := dronescanner.New(dronescanner.WithWorkingDirectory(args.WorkingDirectory))
+			if err != nil {
+				return err
+			}
+			scanners = append(scanners, d)
 		case scanner.GolangScannerName:
-			// create golang scanner
 			g, err := golang.New(golang.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
 			scanners = append(scanners, g)
 		case scanner.JavascriptScannerName:
-			// create golang scanner
 			j, err := javascript.New(javascript.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
 			scanners = append(scanners, j)
 		case scanner.JavaScannerName:
-			// create golang scanner
 			j, err := java.New(java.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
 			scanners = append(scanners, j)
-		case scanner.DroneScannerName:
-			// create drone scanner
-			d, err := dronescanner.New(dronescanner.WithWorkingDirectory(args.WorkingDirectory))
+		case scanner.RubyScannerName:
+			r, err := ruby.New(ruby.WithWorkingDirectory(args.WorkingDirectory))
 			if err != nil {
 				return err
 			}
-			scanners = append(scanners, d)
-		case scanner.DockerScannerName:
-			// create docker scanner
-			d, err := docker.New(docker.WithWorkingDirectory(args.WorkingDirectory))
-			if err != nil {
-				return err
-			}
-			scanners = append(scanners, d)
+			scanners = append(scanners, r)
 		default:
 			fmt.Printf("unknown scanner: %s\n", scannerName)
 		}
