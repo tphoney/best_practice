@@ -29,12 +29,13 @@ Example output:
 
 There are 4 ways to use this project:
 
-### Using it as a cli tool
+### Using the best_practice container
 
-Download the Binaries from the release section. Then, you can use it as a cli tool.
+You can use it as a container. This following will run it against your current working directory.
 
 ```bash
-./best-practice 
+docker pull tphoney/best_practice
+docker run -it --rm -v $(pwd):/plugin -e PLUGIN_WORKING_DIRECTORY=/plugin tphoney/best_practice
 ```
 
 Execute the newly created drone build file
@@ -46,13 +47,12 @@ brew install drone-cli
 drone exec .drone.yml
 ```
 
-### Using the container locally
+### Using it as a cli tool
 
-You can use a container locally. This will run it against your current working directory.
+Download the Binaries from the release section. Then, you can use it as a cli tool.
 
 ```bash
-docker pull tphoney/best_practice
-docker run -it --rm -v $(pwd):/plugin -e PLUGIN_WORKING_DIRECTORY=/plugin tphoney/best_practice
+./best-practice 
 ```
 
 Execute the newly created drone build file
