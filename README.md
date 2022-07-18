@@ -2,18 +2,18 @@
 
 A plugin/cli tool/container/library for automating best practice in a code repository. For example:
 
-- Build a drone yaml file based on the technologies in the repo
-- Give general programming language specific recommendations
-- Recommend other Harness products based on your project
+- Build a drone yaml file based on the programming language technologies in the repository
+- Analyse your drone build file and give recommendations based on languages used in the repository
+- Recommend other Harness products based on your repository
 
-It has the following scanners:
+A scanner will check a language for build, lint, testing capabilities and language specific features. EG Android builds in Java. We have the following language specific scanners:
 
-- Docker scanner, for best practice
-- Drone scanner, analyses your build file to give you recommendations
-- Golang scanner, for best practice
-- Java scanner, for best practice
-- Javascript scanner, for best practice
-- Ruby scanner, for best practice
+- Docker scanner
+- Drone scanner
+- Golang scanner
+- Java scanner
+- Javascript scanner
+- Ruby scanner
 
 And the following output formats:
 
