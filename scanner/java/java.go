@@ -103,9 +103,8 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		returnVal = append(returnVal, harnessProductResult)
 	}
 	// check for the various build systems
-	var buildTypes []string
 	if sc.runAll || slices.Contains(requestedOutputs, BuildCheck) {
-		_, outputResults := sc.buildCheck(len(testMatches) == 0)
+		_, outputResults := sc.buildCheck()
 		if len(outputResults) > 0 {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -134,7 +133,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		}
 	}
 	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
-		outputResults, err := sc.droneCheck(buildTypes, foundAndroid)
+		outputResults, err := sc.droneCheck(foundAndroid)
 		if err == nil {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -142,7 +141,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	return returnVal, nil
 }
 
-func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputResults []types.Scanlet) {
+func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types.Scanlet) {
 	// lets check for the build system
 	_, err := os.Stat(filepath.Join(sc.workingDirectory, bazelBuildFile))
 	if err == nil {
@@ -269,7 +268,7 @@ func (sc *scannerConfig) buildCheck(hasTests bool) (buildType []string, outputRe
 	return buildType, outputResults
 }
 
-func (sc *scannerConfig) droneCheck(buildTypes []string, hasAndroid bool) (outputResults []types.Scanlet, err error) {
+func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scanlet, err error) {
 	pipelines, err := dronescanner.ReadDroneFile(sc.workingDirectory, dronescanner.DroneFileLocation)
 	if err != nil {
 		return outputResults, err
