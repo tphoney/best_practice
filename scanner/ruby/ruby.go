@@ -25,10 +25,10 @@ type scannerConfig struct {
 
 const (
 	Name        = scanner.RubyScannerName
-	BuildCheck  = "ruby build"
-	TestCheck   = "ruby test"
-	LintCheck   = "ruby lint"
-	DroneCheck  = "ruby drone build"
+	BuildCheck  = "Ruby build"
+	TestCheck   = "Ruby test"
+	LintCheck   = "Ruby lint"
+	DroneCheck  = "Ruby Drone build"
 	rubyVersion = "latest"
 )
 
@@ -73,10 +73,11 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 				Description:    "run rspec",
 				OutputRenderer: dronebuildmaker.Name,
 				Spec: dronebuildmaker.OutputFields{
-					RawYaml: fmt.Sprintf(`  - name: run rspec
+					RawYaml: fmt.Sprintf(`
+	- name: run rspec
 		image: ruby:%s
 		commands:
-		  - bundle install
+			- bundle install
 			- bundle exec rspec spec`, rubyVersion),
 					Command: "bundle exec rspec spec",
 					HelpURL: "https://docs.npmjs.com/misc/test",
@@ -116,11 +117,12 @@ func (sc *scannerConfig) buildCheck(rubyVersion string) (match bool, outputResul
 			Description:    "build using rake",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: build with rake
+				RawYaml: fmt.Sprintf(`
+	- name: build with rake
 		image: ruby:%s
 		commands:
-				- bundle install
-				- bundle exec rake `, rubyVersion),
+			- bundle install
+			- bundle exec rake`, rubyVersion),
 				Command: "bundle exec rake build",
 				HelpURL: "https://bundler.io/man/bundle-exec.1.html",
 			},
@@ -140,11 +142,12 @@ func (sc *scannerConfig) lintCheck(rubyVersion string) (match bool, outputResult
 			Description:    "run rubocop",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run rubocop
+				RawYaml: fmt.Sprintf(`
+	- name: run rubocop
 		image: ruby:%s
 		commands:
-				- bundle install
-				- rubocop`, rubyVersion),
+			- bundle install
+			- rubocop`, rubyVersion),
 				Command: "rubocop",
 				HelpURL: "https://docs.rubygems.org/rubocop",
 			},
@@ -187,10 +190,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/build",
-					RawYaml: fmt.Sprintf(`  - name: run npm build
-					image: node:%s-alpine
-					commands:
-						- npm run build`, nodeVersion),
+					RawYaml: fmt.Sprintf(`
+	- name: run npm build
+		image: node:%s-alpine
+		commands:
+			- npm run build`, nodeVersion),
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -203,10 +207,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/lint",
-					RawYaml: fmt.Sprintf(`  - name: run npm build
-					image: node:%s-alpine
-					commands:
-						- npm run lint`, nodeVersion),
+					RawYaml: fmt.Sprintf(`
+	- name: run npm build
+		image: node:%s-alpine
+		commands:
+			- npm run lint`, nodeVersion),
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -219,10 +224,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/test",
-					RawYaml: fmt.Sprintf(`  - name: run npm build
-					image: node:%s-alpine
-					commands:
-						- npm run test`, nodeVersion),
+					RawYaml: fmt.Sprintf(`
+	- name: run npm build
+		image: node:%s-alpine
+		commands:
+			- npm run test`, nodeVersion),
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)

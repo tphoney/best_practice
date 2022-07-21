@@ -28,8 +28,8 @@ type scannerConfig struct {
 const (
 	DroneFileLocation       = ".drone.yml"
 	Name                    = scanner.DroneScannerName
-	DroneCheck              = "drone"
-	VolumesCheck            = "drone volumes"
+	StepsCheck              = "Drone max steps"
+	VolumeCachingCheck      = "Drone volume caching"
 	MaximumStepsPerPipeline = 6
 )
 
@@ -55,7 +55,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{DroneCheck, VolumesCheck}
+	return []string{StepsCheck, VolumeCachingCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -70,14 +70,14 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		return returnVal, err
 	}
 	// count the number of steps per pipeline
-	if sc.runAll || slices.Contains(requestedOutputs, DroneCheck) {
+	if sc.runAll || slices.Contains(requestedOutputs, StepsCheck) {
 		match, outputResults := droneStepsCheck(pipelines)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	// if we have multiple go steps / java steps check for shared volumes
-	if sc.runAll || slices.Contains(requestedOutputs, VolumesCheck) {
+	if sc.runAll || slices.Contains(requestedOutputs, VolumeCachingCheck) {
 		match, outputResults := droneVolumesCheck(pipelines)
 		if match {
 			returnVal = append(returnVal, outputResults...)
@@ -91,7 +91,7 @@ func droneStepsCheck(pipelines []DronePipeline) (match bool, outputResults []typ
 	for i := range pipelines {
 		if len(pipelines[i].Steps) > MaximumStepsPerPipeline {
 			bestPracticeResult := types.Scanlet{
-				Name:           DroneCheck,
+				Name:           StepsCheck,
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' has more than %d steps, split into multiple pipelines", pipelines[i].Name, MaximumStepsPerPipeline),
 				OutputRenderer: outputter.DroneBuildAnalysis,
@@ -122,7 +122,7 @@ func droneVolumesCheck(pipelines []DronePipeline) (match bool, outputResults []t
 		}
 		if numberOfGOSteps > 1 {
 			bestPracticeResult := types.Scanlet{
-				Name:           DroneCheck,
+				Name:           VolumeCachingCheck,
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' has %d golang steps, use a volume", pipelines[i].Name, numberOfGOSteps),
 				OutputRenderer: outputter.DroneBuildAnalysis,
