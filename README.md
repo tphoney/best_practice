@@ -52,7 +52,7 @@ drone exec .drone.yml
 Download the Binaries from the release section. Then, you can use it as a cli tool.
 
 ```bash
-./best-practice 
+./best-practice
 ```
 
 Execute the newly created drone build file

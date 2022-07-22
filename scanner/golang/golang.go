@@ -28,11 +28,11 @@ const (
 	goModLocation  = "go.mod"
 	goLintLocation = ".golangci.yml"
 	Name           = scanner.GolangScannerName
-	ModCheck       = "golang mod"
-	LintCheck      = "golang lint"
-	MainCheck      = "golang main"
-	UnitTestCheck  = "golang unit test"
-	DroneCheck     = "golang drone build"
+	ModCheck       = "Golang mod"
+	LintCheck      = "Golang lint"
+	MainCheck      = "Golang main"
+	testCheck      = "Golang test"
+	DroneCheck     = "Golang Drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -57,7 +57,7 @@ func (sc *scannerConfig) Description() string {
 }
 
 func (sc *scannerConfig) AvailableChecks() []string {
-	return []string{ModCheck, LintCheck, MainCheck, UnitTestCheck, DroneCheck}
+	return []string{ModCheck, LintCheck, MainCheck, testCheck, DroneCheck}
 }
 
 func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (returnVal []types.Scanlet, err error) {
@@ -82,7 +82,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 		}
 	}
 	// find test files
-	if sc.runAll || slices.Contains(requestedOutputs, UnitTestCheck) {
+	if sc.runAll || slices.Contains(requestedOutputs, testCheck) {
 		match, testResult := sc.unitTestCheck()
 		if match {
 			returnVal = append(returnVal, testResult...)
@@ -114,7 +114,8 @@ func (sc *scannerConfig) modCheck() (match bool, outputResults []types.Scanlet) 
 			Description:    "run go mod",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `  - name: go mod
+				RawYaml: `
+  - name: go mod
     image: golang:1
     commands:
       - go mod tidy
@@ -139,7 +140,8 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 			Description:    "run go lint as part of the build",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `  - name: golangci-lint
+				RawYaml: `
+  - name: golangci-lint
     image: golangci/golangci-lint
     commands:
       - golangci-lint run --timeout 500s`,
@@ -172,8 +174,8 @@ func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet)
 			Description:    "run go build",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(
-					`  - name: build
+				RawYaml: fmt.Sprintf(`
+  - name: build
     image: golang:1
     commands:
       - go build %s`, mainLocation),
@@ -191,12 +193,13 @@ func (sc *scannerConfig) unitTestCheck() (match bool, outputResults []types.Scan
 	matches, err := scanner.FindMatchingFiles(sc.workingDirectory, "*_test.go", true)
 	if err == nil && len(matches) > 0 {
 		droneBuildResult := types.Scanlet{
-			Name:           UnitTestCheck,
+			Name:           testCheck,
 			ScannerFamily:  Name,
 			Description:    "run go unit tests",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `  - name: golang unit tests
+				RawYaml: `
+  - name: golang unit tests
     image: golang:1
     commands:
       - go test ./...`,
@@ -247,11 +250,12 @@ func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error)
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://go.dev/ref/mod#go-mod-tidy",
 					Command: "go mod tidy",
-					RawYaml: `  - name: go mod tidy
-	image: golang:1
-	commands:
-		- go mod tidy
-		- diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
+					RawYaml: `
+  - name: go mod tidy
+    image: golang:1
+    commands:
+      - go mod tidy
+      - diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -265,10 +269,11 @@ func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error)
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://golangci-lint.run.googlesource.com/golangci-lint",
 					Command: "golangci-lint run",
-					RawYaml: `  - name: golangci-lint
-	image: golangci/golangci-lint
-	commands:
-		- golangci-lint run --timeout 500s`,
+					RawYaml: `
+  - name: golangci-lint
+    image: golangci/golangci-lint
+    commands:
+      - golangci-lint run --timeout 500s`,
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -282,10 +287,11 @@ func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error)
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://golang.org/cmd/go/#hdr-Testing_tools",
 					Command: "go test ./...",
-					RawYaml: `  - name: go unit tests
-	image: golang:1
-	commands:
-		- go test ./...`,
+					RawYaml: `
+  - name: go unit tests
+    image: golang:1
+    commands:
+      - go test ./...`,
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)

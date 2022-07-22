@@ -25,9 +25,9 @@ type scannerConfig struct {
 const (
 	dockerFilename    = "Dockerfile"
 	Name              = scanner.DockerScannerName
-	BuildCheck        = "docker build"
-	SecurityScanCheck = "docker security scan"
-	DroneCheck        = "docker drone build"
+	BuildCheck        = "Docker build"
+	SecurityScanCheck = "Docker security scan"
+	DroneCheck        = "Docker Drone build"
 )
 
 func New(opts ...Option) (types.Scanner, error) {
@@ -90,18 +90,18 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 			Description:    "add docker build step, we can upload to acr/dockerhub/ecr/gcr/heroku",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: build %s
-	image: plugins/docker
-	settings:
-	repo: organization/docker-image-name
-	  dry_run: true                       # TODO remove this in production      
-	  auto_tag: true
-	  dockerfile: %s
-	  username:
-		from_secret: docker_username
-	  password:
-		from_secret: docker_password
-`, dockerFiles[i], dockerFiles[i]),
+				RawYaml: fmt.Sprintf(`
+  - name: build %s
+    image: plugins/docker
+    settings:
+    repo: organization/docker-image-name
+      dry_run: true                       # TODO remove this in production
+      auto_tag: true
+      dockerfile: %s
+      username:
+      from_secret: docker_username
+      password:
+      from_secret: docker_password`, dockerFiles[i], dockerFiles[i]),
 				Command: fmt.Sprintf("docker build  --rm --no-cache -t organization/docker-image-name:latest -f %s .", dockerFiles[i]),
 				HelpURL: "https://plugins.drone.io/plugins/docker",
 			},
@@ -120,15 +120,16 @@ func (sc *scannerConfig) securityCheck(dockerFiles []string) (outputResults []ty
 			Description:    "run snyk security scan",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: scan image %s
-	image: plugins//drone-snyk
-	privileged: true
-	settings:
-		dockerfile: %s
-		image: organization/docker-image-name 
-		snyk:
-		  from_secret: snyk_token`, dockerFiles[i], dockerFiles[i]),
-				Command: fmt.Sprintf("docker scan  drone-plugins/drone-snyk --file= %s", dockerFiles[i]),
+				RawYaml: fmt.Sprintf(`
+  - name: scan image %s
+    image: plugins/drone-snyk
+    privileged: true
+    settings:
+      dockerfile: %s
+      image: organization/docker-image-name
+      snyk:
+        from_secret: snyk_token`, dockerFiles[i], dockerFiles[i]),
+				Command: fmt.Sprintf("docker scan drone-plugins/drone-snyk --file= %s", dockerFiles[i]),
 				HelpURL: "snyk.io/help/",
 			},
 		}
@@ -169,10 +170,23 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 			bestPracticeResult := types.Scanlet{
 				Name:           BuildCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should use the drone docker plugin",
+				Description:    fmt.Sprintf("pipeline '%s' should use the drone docker plugin", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+					HelpURL: "https://plugins.drone.io/plugins/docker",
+					Command: "docker build  --rm --no-cache -t organization/docker-image-name:latest -f Dockerfile .",
+					RawYaml: `
+  - name: build docker
+    image: plugins/docker
+    settings:
+    repo: organization/docker-image-name
+      dry_run: true                       # TODO remove this in production
+      auto_tag: true
+      dockerfile: Dockerfile
+      username:
+      from_secret: docker_username
+      password:
+      from_secret: docker_password`,
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -181,10 +195,20 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 			bestPracticeResult := types.Scanlet{
 				Name:           BuildCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should use the drone snyk plugin",
+				Description:    fmt.Sprintf("pipeline '%s' should use the drone snyk plugin", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
-					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
+					HelpURL: "snyk.io/help/",
+					Command: "docker scan drone-plugins/drone-snyk --file=Dockerfile",
+					RawYaml: `
+  - name: scan image
+    image: plugins/drone-snyk
+    privileged: true
+    settings:
+      dockerfile: Dockerfile
+      image: organization/docker-image-name
+      snyk:
+        from_secret: snyk_token`,
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)

@@ -27,10 +27,10 @@ type scannerConfig struct {
 const (
 	packageLocation = "package.json"
 	Name            = scanner.JavascriptScannerName
-	BuildCheck      = "javascript build"
-	TestCheck       = "javascript test"
-	LintCheck       = "javascript lint"
-	DroneCheck      = "javascript drone build"
+	BuildCheck      = "Javascript build"
+	TestCheck       = "Javascript test"
+	LintCheck       = "Javascript lint"
+	DroneCheck      = "Javascript Drone build"
 	nodeVersion     = "18"
 )
 
@@ -111,7 +111,8 @@ func (sc *scannerConfig) buildCheck(scriptMap map[string]interface{}, nodeVersio
 			Description:    "run npm build",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run npm build
+				RawYaml: fmt.Sprintf(`
+  - name: run npm build
     image: node:%s-alpine
     commands:
       - npm run build`, nodeVersion),
@@ -133,7 +134,8 @@ func (sc *scannerConfig) lintCheck(scriptMap map[string]interface{}, reactVersio
 			Description:    "run npm lint",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run npm lint
+				RawYaml: fmt.Sprintf(`
+  - name: run npm lint
     image: node:%s-alpine
     commands:
       - npm run lint`, reactVersion),
@@ -155,7 +157,8 @@ func (sc *scannerConfig) testCheck(scriptMap map[string]interface{}, nodeVersion
 			Description:    "run npm test",
 			OutputRenderer: dronebuildmaker.Name,
 			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`  - name: run npm test
+				RawYaml: fmt.Sprintf(`
+  - name: run npm test
     image: node:%s-alpine
     commands:
       - npm run test`, nodeVersion),
@@ -202,10 +205,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/build",
-					RawYaml: fmt.Sprintf(`  - name: run npm build
-					image: node:%s-alpine
-					commands:
-						- npm run build`, nodeVersion),
+					RawYaml: fmt.Sprintf(`
+    - name: run npm build
+      image: node:%s-alpine
+      commands:
+        - npm run build`, nodeVersion),
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -218,10 +222,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/lint",
-					RawYaml: fmt.Sprintf(`  - name: run npm build
-					image: node:%s-alpine
-					commands:
-						- npm run lint`, nodeVersion),
+					RawYaml: fmt.Sprintf(`
+  - name: run npm build
+    image: node:%s-alpine
+    commands:
+    - npm run lint`, nodeVersion),
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
@@ -234,10 +239,11 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/test",
-					RawYaml: fmt.Sprintf(`  - name: run npm build
-					image: node:%s-alpine
-					commands:
-						- npm run test`, nodeVersion),
+					RawYaml: fmt.Sprintf(`
+  - name: run npm build
+    image: node:%s-alpine
+    commands:
+      - npm run test`, nodeVersion),
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)

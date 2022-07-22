@@ -62,12 +62,16 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	fmt.Println("Best Practice Results:")
 	for _, result := range bestPracticeResults {
 		bp := result.Spec.(OutputFields)
-		fmt.Printf(`- %s: %s
-  command to run: "%s"
-  url: %s
-  Drone YAML:
-%s
-`, result.Name, result.Description, bp.Command, bp.HelpURL, bp.RawYaml)
+		fmt.Printf("- %s check: %s\n", result.Name, result.Description)
+		if bp.Command != "" {
+			fmt.Printf("  Command to run: '%s'\n", bp.Command)
+		}
+		if bp.HelpURL != "" {
+			fmt.Printf("  Further Reading: '%s'\n", bp.HelpURL)
+		}
+		if bp.RawYaml != "" {
+			fmt.Printf("  Drone build YAML: %s\n", bp.RawYaml)
+		}
 	}
 	fmt.Println("")
 	return nil

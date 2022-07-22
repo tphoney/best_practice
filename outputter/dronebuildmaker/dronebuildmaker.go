@@ -81,12 +81,11 @@ platform:
   os: linux
   arch: amd64
 
-steps:
-`
+steps:`
 	// add the steps to the build file
 	for _, result := range results {
 		dbo := result.Spec.(OutputFields)
-		buildOutput += fmt.Sprintln(dbo.RawYaml)
+		buildOutput += dbo.RawYaml
 	}
 
 	if oc.stdOutput {

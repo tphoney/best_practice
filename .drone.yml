@@ -2,7 +2,7 @@ kind: pipeline
 type: vm
 name: default
 
-pool: 
+pool:
   use: ubuntu
 
 steps:
