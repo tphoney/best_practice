@@ -89,7 +89,7 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 	if len(testMatches) > 0 {
 		// recommend test intelligence
 		harnessProductResult := types.Scanlet{
-			Name:           "test_intelligence",
+			Name:           "Test Intelligence",
 			ScannerFamily:  Name,
 			Description:    "java tests found",
 			OutputRenderer: outputter.HarnessProduct,
@@ -98,6 +98,19 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 				URL:         "https://harness.io/blog/continuous-integration/test-intelligence/",
 				Explanation: "Test Intelligence reduces the amount of time spent running tests by intelligently running only the necessary tests.",
 				Why:         "Detected Java Junit tests",
+			},
+		}
+		returnVal = append(returnVal, harnessProductResult)
+		harnessProductResult = types.Scanlet{
+			Name:           "Feature Flags",
+			ScannerFamily:  Name,
+			Description:    "java projects should have feature flags",
+			OutputRenderer: outputter.HarnessProduct,
+			Spec: harnessproduct.OutputFields{
+				ProductName: "Feature Flags",
+				URL:         "https://harness.io/blog/feature-flags/get-started-feature-flags/",
+				Explanation: "Feature Flags are a way to enable and disable features of your application and keep track of their state.",
+				Why:         "Detected Java Project",
 			},
 		}
 		returnVal = append(returnVal, harnessProductResult)
