@@ -136,10 +136,10 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 					Command: "sdkmanager --list",
 					HelpURL: "https://developer.android.com/studio/command-line/sdkmanager.html",
 					RawYaml: `
-        - name: android sdk
-          image: androidsdk/android-31
-          commands:
-            - sdkmanager --list`,
+  - name: android sdk
+    image: androidsdk/android-31
+    commands:
+      - sdkmanager --list`,
 				},
 			}
 			foundAndroid = true
@@ -357,7 +357,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
   - name: build
     image: google/bazel
     commands:
-          - bazel build`,
+      - bazel build`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)
@@ -373,7 +373,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
     - name: test
       image: maven
       commands:
-            - mvn test`,
+        - mvn test`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)
@@ -389,7 +389,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
     - name: build
       image: maven
       commands:
-            - mvn clean install`,
+        - mvn clean install`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)
@@ -405,7 +405,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
     - name: test
       image: gradle/gradle
       commands:
-            - ./gradlew test`,
+        - ./gradlew test`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)
@@ -421,7 +421,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
     - name: build
       image: gradle/gradle
       commands:
-            - ./gradlew clean build`,
+        - ./gradlew clean build`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)
@@ -437,7 +437,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
     - name: build
       image: android/sdk
       commands:
-            - sdkmanager --update --no-prompt --all`,
+        - sdkmanager --update --no-prompt --all`,
 				},
 			}
 			outputResults = append(outputResults, buildResult)

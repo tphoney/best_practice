@@ -94,14 +94,14 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
   - name: build %s
     image: plugins/docker
     settings:
-    repo: organization/docker-image-name
+      repo: organization/docker-image-name
       dry_run: true                       # TODO remove this in production
       auto_tag: true
       dockerfile: %s
       username:
-      from_secret: docker_username
+        from_secret: docker_username
       password:
-      from_secret: docker_password`, dockerFiles[i], dockerFiles[i]),
+        from_secret: docker_password`, dockerFiles[i], dockerFiles[i]),
 				Command: fmt.Sprintf("docker build  --rm --no-cache -t organization/docker-image-name:latest -f %s .", dockerFiles[i]),
 				HelpURL: "https://plugins.drone.io/plugins/docker",
 			},
@@ -179,14 +179,14 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
   - name: build docker
     image: plugins/docker
     settings:
-    repo: organization/docker-image-name
+      repo: organization/docker-image-name
       dry_run: true                       # TODO remove this in production
       auto_tag: true
       dockerfile: Dockerfile
       username:
-      from_secret: docker_username
+        from_secret: docker_username
       password:
-      from_secret: docker_password`,
+        from_secret: docker_password`,
 				},
 			}
 			outputResults = append(outputResults, bestPracticeResult)
