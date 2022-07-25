@@ -201,7 +201,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should run npm build",
+				Description:    fmt.Sprintf("pipeline '%s' should run npm build", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/build",
@@ -218,7 +218,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should run npm lint",
+				Description:    fmt.Sprintf("pipeline '%s' should run npm lint", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/lint",
@@ -235,7 +235,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 			bestPracticeResult := types.Scanlet{
 				Name:           DroneCheck,
 				ScannerFamily:  Name,
-				Description:    "pipeline '%s' should run npm test",
+				Description:    fmt.Sprintf("pipeline '%s' should run npm test", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
 				Spec: buildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/test",

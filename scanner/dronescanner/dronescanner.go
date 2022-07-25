@@ -145,8 +145,8 @@ func ReadDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipel
 	defer file.Close()
 
 	decoder := yaml.NewDecoder(file)
+	myMap := new(DronePipeline)
 	for {
-		myMap := new(DronePipeline)
 		yamlErr := decoder.Decode(&myMap)
 		if myMap == nil {
 			continue
@@ -154,9 +154,10 @@ func ReadDroneFile(workingDir, droneFileLocation string) (pipelines []DronePipel
 		if errors.Is(yamlErr, io.EOF) {
 			break
 		}
-		if yamlErr == nil {
-			pipelines = append(pipelines, *myMap)
+		if yamlErr != nil {
+			return pipelines, fmt.Errorf("error reading %s '%s'", filepath.Join(workingDir, droneFileLocation), yamlErr)
 		}
+		pipelines = append(pipelines, *myMap)
 	}
 	return pipelines, err
 }

@@ -69,7 +69,7 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 	// lets explain what we added to the drone build
 	fmt.Println("Drone Build Generator\n\nAdded the following to the drone build:")
 	for _, result := range results {
-		fmt.Printf("- %s\n", result.Description)
+		fmt.Printf("- %s, %s\n", result.ScannerFamily, result.Description)
 	}
 	fmt.Println("")
 

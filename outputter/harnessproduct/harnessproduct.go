@@ -67,7 +67,8 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 			`- %s
   URL: %s
   Explanation: %s
-  Why: %s`, dbo.ProductName, dbo.URL, dbo.Explanation, dbo.Why)
+  Why: %s
+`, dbo.ProductName, dbo.URL, dbo.Explanation, dbo.Why)
 	}
 	fmt.Println(productOutput)
 	return nil

@@ -20,7 +20,7 @@ func RunScanners(ctx context.Context, scannersToRun []types.Scanner, requestedOu
 	for _, scannerToRun := range scannersToRun {
 		results, err := scannerToRun.Scan(ctx, requestedOutputs)
 		if err != nil {
-			fmt.Printf("error running '%s' scan: %s\n", scannerToRun.Name(), err)
+			fmt.Printf("\n*****\nerror running '%s' scanner: %s\n*****\n\n", scannerToRun.Name(), err)
 		}
 		scanResults = append(scanResults, results...)
 	}
