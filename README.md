@@ -29,23 +29,28 @@ Example output:
 
 There are 4 ways to use this project:
 
-### Using the best_practice container
+### Quick start (docker container)
 
-You can use it as a container. This following will run it against your current working directory.
+To run the best_practice tool against the current working directory.
 
 ```bash
 docker pull tphoney/best_practice
 docker run -it --rm -v $(pwd):/plugin -e PLUGIN_WORKING_DIRECTORY=/plugin tphoney/best_practice
 ```
+It will create a drone build file, give best practice (if a drone file exists) and harness product recommendations.
 
-Execute the newly created drone build file
+
+To execute the newly created drone build file.
 
 ```bash
 # install drone-cli if necessary
 brew install drone-cli
 # execute the drone build
 drone exec .drone.yml
+# your build should run !
 ```
+
+**NB if there is an existing `.drone.yml` file, it will create one called `.drone.yml.new`**
 
 ### Using it as a cli tool
 
