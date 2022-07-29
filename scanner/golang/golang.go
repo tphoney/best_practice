@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
-	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
+
+	"github.com/tphoney/best_practice/outputter/buildmaker"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
@@ -112,15 +113,14 @@ func (sc *scannerConfig) modCheck() (match bool, outputResults []types.Scanlet) 
 			Name:           ModCheck,
 			ScannerFamily:  Name,
 			Description:    "run go mod",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: go mod
-    image: golang:1
-    commands:
-      - go mod tidy
-      - diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`,
-				Command: "go mod tidy",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "go mod",
+					Image:    "golang:1",
+					Commands: []string{"go mod tidy", `diff go.mod go.mod.bak || (echo "go.mod is not up to date" && exit 1)`},
+				},
+				CLI:     "go mod tidy",
 				HelpURL: "https://go.dev/ref/mod#go-mod-tidy",
 			},
 		}
@@ -138,14 +138,14 @@ func (sc *scannerConfig) lintCheck() (match bool, outputResults []types.Scanlet)
 			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run go lint as part of the build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: golangci-lint
-    image: golangci/golangci-lint
-    commands:
-      - golangci-lint run --timeout 500s`,
-				Command: "golangci-lint run",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "go lint",
+					Image:    "golangci/golangci-lint",
+					Commands: []string{"golangci-lint run --timeout 500s"},
+				},
+				CLI:     "golangci-lint run",
 				HelpURL: "https://golangci-lint.run.googlesource.com/golangci-lint",
 			},
 		}
@@ -172,14 +172,14 @@ func (sc *scannerConfig) mainCheck() (match bool, outputResults []types.Scanlet)
 			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run go build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-  - name: build
-    image: golang:1
-    commands:
-      - go build %s`, mainLocation),
-				Command: fmt.Sprintf("go build %s", mainLocation),
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "go build",
+					Image:    "golang:1",
+					Commands: []string{fmt.Sprintf("go build %s", mainLocation)},
+				},
+				CLI:     fmt.Sprintf("go build %s", mainLocation),
 				HelpURL: "https://pkg.go.dev/cmd/go#hdr-Build_constraints",
 			},
 		}
@@ -196,14 +196,14 @@ func (sc *scannerConfig) unitTestCheck() (match bool, outputResults []types.Scan
 			Name:           testCheck,
 			ScannerFamily:  Name,
 			Description:    "run go unit tests",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: golang unit tests
-    image: golang:1
-    commands:
-      - go test ./...`,
-				Command: "go test ./...",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "go unit tests",
+					Image:    "golang:1",
+					Commands: []string{"go test ./..."},
+				},
+				CLI:     "go test ./...",
 				HelpURL: "https://golang.org/cmd/go/#hdr-Testing_tools",
 			},
 		}
@@ -247,7 +247,7 @@ func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error)
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should check mod file is up to date", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://go.dev/ref/mod#go-mod-tidy",
 					Command: "go mod tidy",
 					RawYaml: `
@@ -266,7 +266,7 @@ func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error)
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should check go lint", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://golangci-lint.run.googlesource.com/golangci-lint",
 					Command: "golangci-lint run",
 					RawYaml: `
@@ -284,7 +284,7 @@ func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error)
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should check go unit tests", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://golang.org/cmd/go/#hdr-Testing_tools",
 					Command: "go test ./...",
 					RawYaml: `

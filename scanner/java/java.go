@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
-	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
+
+	"github.com/tphoney/best_practice/outputter/buildmaker"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
 	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/dronescanner"
@@ -78,9 +79,9 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 			Name:           "add_tests",
 			ScannerFamily:  Name,
 			Description:    "a java project should have tests, running them depends on the build system",
-			OutputRenderer: outputter.DroneBuildMaker,
-			Spec: dronebuildmaker.OutputFields{
-				Command: "javac -d /absolute/path/for/compiled/classes -cp /absolute/path/to/junit-4.12.jar /absolute/path/to/TestClassName.java",
+			OutputRenderer: outputter.BuildMaker,
+			Spec: buildmaker.OutputFields{
+				CLI:     "javac -d /absolute/path/for/compiled/classes -cp /absolute/path/to/junit-4.12.jar /absolute/path/to/TestClassName.java",
 				HelpURL: "http://users.csc.calpoly.edu/~djanzen/research/TDD08/cdesai/IntroducingJUnit/IntroducingJUnit.html",
 			},
 		}
@@ -131,15 +132,15 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedOutputs []string) (r
 				Name:           "android",
 				ScannerFamily:  Name,
 				Description:    "run android specific project tools",
-				OutputRenderer: outputter.DroneBuildMaker,
-				Spec: dronebuildmaker.OutputFields{
-					Command: "sdkmanager --list",
+				OutputRenderer: outputter.BuildMaker,
+				Spec: buildmaker.OutputFields{
+					CLI:     "sdkmanager --list",
 					HelpURL: "https://developer.android.com/studio/command-line/sdkmanager.html",
-					RawYaml: `
-  - name: android sdk
-    image: androidsdk/android-31
-    commands:
-      - sdkmanager --list`,
+					Build: buildmaker.Build{
+						Name:     "android sdk",
+						Image:    "androidsdk/android-31",
+						Commands: []string{"sdkmanager --list"},
+					},
 				},
 			}
 			foundAndroid = true
@@ -163,13 +164,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: test
-    image: google/bazel
-    commands:
-      - bazel test`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "test",
+					Image:    "google/bazel",
+					Commands: []string{"bazel test"},
+				},
 			},
 		}
 		outputResults = append(outputResults, testResult)
@@ -177,13 +178,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run bazel build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: bazel build
-    image: google/bazel
-    commands:
-      - bazel build :all`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "bazel build",
+					Image:    "google/bazel",
+					Commands: []string{"bazel build"},
+				},
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
@@ -195,13 +196,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: test
-    image: maven
-    commands:
-      - mvn test`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "test",
+					Image:    "maven",
+					Commands: []string{"mvn test"},
+				},
 			},
 		}
 		outputResults = append(outputResults, testResult)
@@ -209,13 +210,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run maven build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: maven build
-    image: maven
-    commands:
-      - mvn clean install`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "maven build",
+					Image:    "maven",
+					Commands: []string{"mvn clean install"},
+				},
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
@@ -228,13 +229,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: test
-    image: gradle/gradle
-    commands:
-      - ./gradlew test`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "test",
+					Image:    "gradle",
+					Commands: []string{"./gradlew test"},
+				},
 			},
 		}
 		outputResults = append(outputResults, testResult)
@@ -242,13 +243,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run gradle build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-- name: gradle build
-  image: gradle/gradle
-  commands:
-  - ./gradlew clean build`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "gradle build",
+					Image:    "gradle",
+					Commands: []string{"./gradlew clean build"},
+				},
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
@@ -261,13 +262,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run tests",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: test
-    image: frekele/ant/
-    commands:
-      - ant -buildfile build.xml test`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "test",
+					Image:    "frekele/ant",
+					Commands: []string{"ant -buildfile build.xml test"},
+				},
 			},
 		}
 		outputResults = append(outputResults, testResult)
@@ -275,13 +276,13 @@ func (sc *scannerConfig) buildCheck() (buildType []string, outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run ant build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: `
-  - name: ant build
-    image: frekele/ant
-    commands:
-    - ant -buildfile build.xml`,
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "ant build",
+					Image:    "frekele/ant",
+					Commands: []string{"ant -buildfile build.xml"},
+				},
 			},
 		}
 		outputResults = append(outputResults, droneBuildResult)
@@ -336,7 +337,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run bazel tests",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
   - name: test
     image: google/bazel
@@ -352,7 +353,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run bazel build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
   - name: build
     image: google/bazel
@@ -368,7 +369,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run maven test",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
     - name: test
       image: maven
@@ -384,7 +385,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run maven build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
     - name: build
       image: maven
@@ -400,7 +401,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run gradle test",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
     - name: test
       image: gradle/gradle
@@ -416,7 +417,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run gradle build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
     - name: build
       image: gradle/gradle
@@ -432,7 +433,7 @@ func (sc *scannerConfig) droneCheck(hasAndroid bool) (outputResults []types.Scan
 				ScannerFamily:  Name,
 				Description:    "run android tests and builds with the android sdk",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					RawYaml: `
     - name: build
       image: android/sdk

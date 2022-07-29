@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
-	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
+	"github.com/tphoney/best_practice/outputter/buildmaker"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
@@ -71,15 +71,14 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 				Name:           TestCheck,
 				ScannerFamily:  Name,
 				Description:    "run rspec",
-				OutputRenderer: dronebuildmaker.Name,
-				Spec: dronebuildmaker.OutputFields{
-					RawYaml: fmt.Sprintf(`
-	- name: run rspec
-		image: ruby:%s
-		commands:
-			- bundle install
-			- bundle exec rspec spec`, rubyVersion),
-					Command: "bundle exec rspec spec",
+				OutputRenderer: buildmaker.Name,
+				Spec: buildmaker.OutputFields{
+					Build: buildmaker.Build{
+						Name:     "run rspec",
+						Image:    fmt.Sprintf("ruby:%s", rubyVersion),
+						Commands: []string{"bundle install", "bundle exec rspec spec"},
+					},
+					CLI:     "bundle exec rspec spec",
 					HelpURL: "https://docs.npmjs.com/misc/test",
 				},
 			}
@@ -115,15 +114,14 @@ func (sc *scannerConfig) buildCheck(rubyVersion string) (match bool, outputResul
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "build using rake",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-	- name: build with rake
-		image: ruby:%s
-		commands:
-			- bundle install
-			- bundle exec rake`, rubyVersion),
-				Command: "bundle exec rake build",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "build with rake",
+					Image:    fmt.Sprintf("ruby:%s", rubyVersion),
+					Commands: []string{"bundle install", "bundle exec rake"},
+				},
+				CLI:     "bundle exec rake build",
 				HelpURL: "https://bundler.io/man/bundle-exec.1.html",
 			},
 		}
@@ -140,15 +138,14 @@ func (sc *scannerConfig) lintCheck(rubyVersion string) (match bool, outputResult
 			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run rubocop",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-	- name: run rubocop
-		image: ruby:%s
-		commands:
-			- bundle install
-			- rubocop`, rubyVersion),
-				Command: "rubocop",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "run rubocop",
+					Image:    fmt.Sprintf("ruby:%s", rubyVersion),
+					Commands: []string{"bundle install", "bundle exec rubocop"},
+				},
+				CLI:     "rubocop",
 				HelpURL: "https://docs.rubygems.org/rubocop",
 			},
 		}
@@ -188,7 +185,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				ScannerFamily:  Name,
 				Description:    "pipeline '%s' should run ruby build",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/build",
 					RawYaml: fmt.Sprintf(`
 	- name: run npm build
@@ -205,7 +202,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				ScannerFamily:  Name,
 				Description:    "pipeline '%s' should run rubocop",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/lint",
 					RawYaml: fmt.Sprintf(`
 	- name: run npm build
@@ -222,7 +219,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				ScannerFamily:  Name,
 				Description:    "pipeline '%s' should run npm test",
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/test",
 					RawYaml: fmt.Sprintf(`
 	- name: run npm build
