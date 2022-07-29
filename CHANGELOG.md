@@ -1,5 +1,22 @@
 # Changelog
 
+## [v0.8.0](https://github.com/tphoney/best_practice/tree/v0.8.0) (2022-07-29)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.7.0...v0.8.0)
+
+**Implemented enhancements:**
+
+- \(feat\) CIE build output [\#31](https://github.com/tphoney/best_practice/pull/31) ([tphoney](https://github.com/tphoney))
+- \(feat\) initial CIE build output [\#30](https://github.com/tphoney/best_practice/pull/30) ([tphoney](https://github.com/tphoney))
+
+**Fixed bugs:**
+
+- \(fix\) yaml fixes and erroring [\#29](https://github.com/tphoney/best_practice/pull/29) ([tphoney](https://github.com/tphoney))
+
+**Closed issues:**
+
+- optimise the drone check in javascript / java / golang / docker [\#17](https://github.com/tphoney/best_practice/issues/17)
+
 ## [v0.7.0](https://github.com/tphoney/best_practice/tree/v0.7.0) (2022-07-25)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.6.0...v0.7.0)
