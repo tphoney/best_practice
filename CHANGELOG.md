@@ -6,7 +6,7 @@
 
 **Implemented enhancements:**
 
-- \(feat\) CIE build output [\#31](https://github.com/tphoney/best_practice/pull/31) ([tphoney](https://github.com/tphoney))
+- \(feat\) CIE build output [\#32](https://github.com/tphoney/best_practice/pull/32) ([tphoney](https://github.com/tphoney))
 - \(feat\) initial CIE build output [\#30](https://github.com/tphoney/best_practice/pull/30) ([tphoney](https://github.com/tphoney))
 
 **Fixed bugs:**
