@@ -10,4 +10,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+require golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
