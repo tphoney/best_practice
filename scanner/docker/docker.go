@@ -2,9 +2,12 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/tphoney/best_practice/outputter"
 	"github.com/tphoney/best_practice/outputter/buildmaker"
 	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
@@ -23,7 +26,7 @@ type scannerConfig struct {
 }
 
 const (
-	dockerFilename    = "Dockerfile"
+	dockerFilename    = "Dockerfile*"
 	Name              = scanner.DockerScannerName
 	BuildCheck        = "Docker build"
 	SecurityScanCheck = "Docker security scan"
@@ -146,13 +149,15 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 	if err != nil {
 		return outputResults, err
 	}
-	// iterate over the pipelines
 	foundDockerPlugin := false
 	foundSnykPlugin := false
 	foundDockerScanCommand := false
 	foundDockerBuildCommand := false
+	var imagesWithTag []*image
+	// iterate over the pipelines
 	for i := range pipelines {
 		for j := range pipelines[i].Steps {
+			// check for plugins
 			if strings.Contains(pipelines[i].Steps[j].Image, "plugins/docker") {
 				foundDockerPlugin = true
 			}
@@ -160,6 +165,14 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 				foundSnykPlugin = true
 			}
 			commands := pipelines[i].Steps[j].Commands
+			// check for images with tagged versions
+			if strings.Contains(pipelines[i].Steps[j].Image, ":") {
+				imagesWithTag = append(imagesWithTag,
+					&image{
+						image:    pipelines[i].Steps[j].Image,
+						stepName: pipelines[i].Steps[j].Name,
+					})
+			}
 			for k := range commands {
 				if strings.Contains(commands[k], "docker build") {
 					foundDockerBuildCommand = true
@@ -216,6 +229,81 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 			}
 			outputResults = append(outputResults, bestPracticeResult)
 		}
+		// check for images with tagged versions
+		containerErr := getContainerUpdates(imagesWithTag)
+		if containerErr != nil {
+			fmt.Printf("error getting container updates: %s", containerErr)
+		}
+		for k := range imagesWithTag {
+			if imagesWithTag[k].updatedImage != "" {
+				bestPracticeResult := types.Scanlet{
+					Name:          BuildCheck,
+					ScannerFamily: Name,
+					Description: fmt.Sprintf("pipeline '%s' step `%s` update image from %s to %s",
+						pipelines[i].Name, imagesWithTag[k].stepName, imagesWithTag[k].image, imagesWithTag[k].updatedImage),
+					OutputRenderer: outputter.DroneBuildAnalysis,
+					Spec: dronebuildanalysis.OutputFields{
+						HelpURL: "https://docs.docker.com/engine/reference/commandline/pull/",
+						Command: fmt.Sprintf("docker pull %s", imagesWithTag[k].updatedImage),
+						RawYaml: fmt.Sprintf(`image: %s`, imagesWithTag[k].updatedImage),
+					},
+				}
+				outputResults = append(outputResults, bestPracticeResult)
+			}
+		}
 	}
 	return outputResults, err
+}
+
+type image struct {
+	image        string
+	updatedImage string
+	stepName     string
+}
+
+type dockerTags []struct {
+	Layer string `json:"layer"`
+	Name  string `json:"name"`
+}
+
+func getContainerUpdates(images []*image) (err error) {
+	for i := range images {
+		// split the name and tag
+		split := strings.Split(images[i].image, ":")
+		if len(split) != 2 { //nolint:gomnd
+			return fmt.Errorf("image name is not in the format 'image:tag'")
+		}
+		name, currentTag := split[0], split[1]
+		currentSemver, currentErr := scanner.ReturnVersionObject(currentTag)
+		if currentErr != nil {
+			return currentErr
+		}
+		// get the docker tags for the image
+		resp, err := http.Get(fmt.Sprintf("https://registry.hub.docker.com/v1/repositories/%s/tags", name))
+		if err != nil {
+			return err
+		}
+		var tags dockerTags
+		err = json.NewDecoder(resp.Body).Decode(&tags)
+		resp.Body.Close()
+		if err != nil {
+			return err
+		}
+		// find the tag in the list of tags
+		var semVers []*semver.Version
+		for j := range tags {
+			// convert to a semver
+			version, err := scanner.ReturnVersionObject(tags[j].Name)
+			if err == nil {
+				semVers = append(semVers, version)
+			}
+		}
+		// iterate over the semvers and find any that are greater than the tag
+		for j := range semVers {
+			if semVers[j].GreaterThan(currentSemver) && strings.Contains(currentTag, semVers[j].Prerelease()) {
+				images[i].updatedImage = fmt.Sprintf("%s:%s", name, semVers[j].String())
+			}
+		}
+	}
+	return nil
 }
