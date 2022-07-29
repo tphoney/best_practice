@@ -11,7 +11,21 @@ import (
 )
 
 const (
-	Name = outputter.BuildMaker
+	Name           = outputter.BuildMaker
+	droneBuildRoot = `kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:`
+	cieBuildRoot = `pipeline:
+  stages:
+    - identifier: default
+      name: default
+      steps:`
 )
 
 var (
@@ -82,18 +96,8 @@ func (oc outputterConfig) Output(ctx context.Context, scanResults []types.Scanle
 		fmt.Printf("- %s, %s\n", result.ScannerFamily, result.Description)
 	}
 	fmt.Println("")
-
-	droneBuildOutput := `kind: pipeline
-type: docker
-name: default
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:`
-	cieBuildOutput := "CIECIE\n"
-
+	droneBuildOutput := droneBuildRoot
+	cieBuildOutput := cieBuildRoot
 	// add the steps to the build file
 	for _, result := range results {
 		dbo := result.Spec.(OutputFields)
@@ -115,7 +119,13 @@ steps:`
 		}
 		// build cie step
 		if oc.outputCIE {
-			cieBuildOutput += fmt.Sprintf("step %s\n", dbo.Name)
+			cieBuildOutput += fmt.Sprintf(`
+      - identifier: %s
+        name: %s
+        spec:
+          connectorRef: account.docker
+          image: %s
+          type: Plugin`, dbo.Name, dbo.Name, dbo.Image)
 		}
 	}
 
