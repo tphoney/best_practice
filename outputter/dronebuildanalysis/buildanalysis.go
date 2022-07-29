@@ -1,4 +1,4 @@
-package buildanalysis
+package dronebuildanalysis
 
 import (
 	"context"

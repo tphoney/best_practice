@@ -10,7 +10,8 @@ import (
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
+
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/types"
 	"golang.org/x/exp/slices"
@@ -95,7 +96,7 @@ func droneStepsCheck(pipelines []DronePipeline) (match bool, outputResults []typ
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' has more than %d steps, split into multiple pipelines", pipelines[i].Name, MaximumStepsPerPipeline),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.drone.io/yaml/docker/#the-depends_on-attribute",
 				},
 			}
@@ -126,7 +127,7 @@ func droneVolumesCheck(pipelines []DronePipeline) (match bool, outputResults []t
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' has %d golang steps, use a volume", pipelines[i].Name, numberOfGOSteps),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.drone.io/pipeline/docker/syntax/volumes/temporary/",
 				},
 			}

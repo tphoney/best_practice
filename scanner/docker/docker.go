@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
-	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
+	"github.com/tphoney/best_practice/outputter/buildmaker"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
@@ -88,11 +88,12 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "add docker build step, we can upload to acr/dockerhub/ecr/gcr/heroku",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-  - name: build %s
-    image: plugins/docker
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:  fmt.Sprintf("docker build %s", dockerFiles[i]),
+					Image: "plugins/docker",
+					DroneAppend: fmt.Sprintf(`  privileged: true
     settings:
       repo: organization/docker-image-name
       dry_run: true                       # TODO remove this in production
@@ -101,8 +102,9 @@ func (sc *scannerConfig) buildCheck(dockerFiles []string) (outputResults []types
       username:
         from_secret: docker_username
       password:
-        from_secret: docker_password`, dockerFiles[i], dockerFiles[i]),
-				Command: fmt.Sprintf("docker build  --rm --no-cache -t organization/docker-image-name:latest -f %s .", dockerFiles[i]),
+        from_secret: docker_password`, dockerFiles[i]),
+				},
+				CLI:     fmt.Sprintf("docker build  --rm --no-cache -t organization/docker-image-name:latest -f %s .", dockerFiles[i]),
 				HelpURL: "https://plugins.drone.io/plugins/docker",
 			},
 		}
@@ -118,18 +120,19 @@ func (sc *scannerConfig) securityCheck(dockerFiles []string) (outputResults []ty
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run snyk security scan",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-  - name: scan image %s
-    image: plugins/drone-snyk
-    privileged: true
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:  fmt.Sprintf("docker build %s", dockerFiles[i]),
+					Image: "plugins/drone-snyk",
+					DroneAppend: fmt.Sprintf(`  privileged: true
     settings:
       dockerfile: %s
       image: organization/docker-image-name
       snyk:
-        from_secret: snyk_token`, dockerFiles[i], dockerFiles[i]),
-				Command: fmt.Sprintf("docker scan drone-plugins/drone-snyk --file= %s", dockerFiles[i]),
+        from_secret: snyk_token`, dockerFiles[i]),
+				},
+				CLI:     fmt.Sprintf("docker scan drone-plugins/drone-snyk --file= %s", dockerFiles[i]),
 				HelpURL: "snyk.io/help/",
 			},
 		}
@@ -172,7 +175,7 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should use the drone docker plugin", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://plugins.drone.io/plugins/docker",
 					Command: "docker build  --rm --no-cache -t organization/docker-image-name:latest -f Dockerfile .",
 					RawYaml: `
@@ -197,7 +200,7 @@ func (sc *scannerConfig) droneBuildCheck() (outputResults []types.Scanlet, err e
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should use the drone snyk plugin", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "snyk.io/help/",
 					Command: "docker scan drone-plugins/drone-snyk --file=Dockerfile",
 					RawYaml: `

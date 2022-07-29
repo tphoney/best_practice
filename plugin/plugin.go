@@ -10,8 +10,8 @@ import (
 	"os"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
-	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
+	"github.com/tphoney/best_practice/outputter/buildmaker"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
 	"github.com/tphoney/best_practice/outputter/harnessproduct"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/docker"
@@ -103,11 +103,12 @@ func Exec(ctx context.Context, args *Args) error { // nolint:gocyclo
 	outputters := make([]types.Outputter, 0)
 	for _, outputName := range args.RequestedOutputs {
 		switch outputName {
-		case outputter.DroneBuildMaker:
-			db, _ := dronebuildmaker.New(dronebuildmaker.WithWorkingDirectory(args.WorkingDirectory), dronebuildmaker.WithStdOutput(false), dronebuildmaker.WithOutputToFile(true))
+		case outputter.BuildMaker:
+			db, _ := buildmaker.New(buildmaker.WithWorkingDirectory(args.WorkingDirectory), buildmaker.WithStdOutput(false), buildmaker.WithOutputToFile(true),
+				buildmaker.WithDroneOutput(true), buildmaker.WithCIEOutput(true))
 			outputters = append(outputters, db)
 		case outputter.DroneBuildAnalysis:
-			bp, _ := buildanalysis.New(buildanalysis.WithStdOutput(true))
+			bp, _ := dronebuildanalysis.New(dronebuildanalysis.WithStdOutput(true))
 			outputters = append(outputters, bp)
 		case outputter.HarnessProduct:
 			hp, _ := harnessproduct.New()

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DroneBuildMaker    = "drone build maker"
+	BuildMaker         = "build maker"
 	HarnessProduct     = "harness product"
 	DroneBuildAnalysis = "drone build analysis"
 )
@@ -27,5 +27,5 @@ func RunOutput(ctx context.Context, outputters []types.Outputter, scanResults []
 }
 
 func ListOutputterNames() []string {
-	return []string{DroneBuildMaker, HarnessProduct, DroneBuildAnalysis}
+	return []string{BuildMaker, HarnessProduct, DroneBuildAnalysis}
 }

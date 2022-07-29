@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/tphoney/best_practice/outputter"
-	"github.com/tphoney/best_practice/outputter/buildanalysis"
-	"github.com/tphoney/best_practice/outputter/dronebuildmaker"
+
+	"github.com/tphoney/best_practice/outputter/buildmaker"
+	"github.com/tphoney/best_practice/outputter/dronebuildanalysis"
 	"github.com/tphoney/best_practice/scanner"
 	"github.com/tphoney/best_practice/scanner/dronescanner"
 	"github.com/tphoney/best_practice/types"
@@ -77,25 +78,25 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 		return returnVal, err
 	}
 	if sc.runAll || slices.Contains(requestedChecks, TestCheck) {
-		match, outputResults := sc.testCheck(scriptMap, nodeVersion)
+		match, outputResults := sc.testCheck(scriptMap)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, LintCheck) {
-		match, outputResults := sc.lintCheck(scriptMap, nodeVersion)
+		match, outputResults := sc.lintCheck(scriptMap)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, BuildCheck) {
-		match, outputResults := sc.buildCheck(scriptMap, nodeVersion)
+		match, outputResults := sc.buildCheck(scriptMap)
 		if match {
 			returnVal = append(returnVal, outputResults...)
 		}
 	}
 	if sc.runAll || slices.Contains(requestedChecks, DroneCheck) {
-		outputResults, err := sc.droneCheck(nodeVersion)
+		outputResults, err := sc.droneCheck()
 		if err == nil {
 			returnVal = append(returnVal, outputResults...)
 		}
@@ -103,20 +104,20 @@ func (sc *scannerConfig) Scan(ctx context.Context, requestedChecks []string) (re
 	return returnVal, nil
 }
 
-func (sc *scannerConfig) buildCheck(scriptMap map[string]interface{}, nodeVersion string) (match bool, outputResults []types.Scanlet) {
+func (sc *scannerConfig) buildCheck(scriptMap map[string]interface{}) (match bool, outputResults []types.Scanlet) {
 	if scriptMap["build"] != "" {
 		buildResult := types.Scanlet{
 			Name:           BuildCheck,
 			ScannerFamily:  Name,
 			Description:    "run npm build",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-  - name: run npm build
-    image: node:%s-alpine
-    commands:
-      - npm run build`, nodeVersion),
-				Command: "npm run build",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "run npm build",
+					Image:    fmt.Sprintf("node:%s-alpine", nodeVersion),
+					Commands: []string{"npm run build"},
+				},
+				CLI:     "npm run build",
 				HelpURL: "https://docs.npmjs.com/misc/build",
 			},
 		}
@@ -126,20 +127,20 @@ func (sc *scannerConfig) buildCheck(scriptMap map[string]interface{}, nodeVersio
 	return false, outputResults
 }
 
-func (sc *scannerConfig) lintCheck(scriptMap map[string]interface{}, reactVersion string) (match bool, outputResults []types.Scanlet) {
+func (sc *scannerConfig) lintCheck(scriptMap map[string]interface{}) (match bool, outputResults []types.Scanlet) {
 	if scriptMap["lint"] != "" {
 		lintResult := types.Scanlet{
 			Name:           LintCheck,
 			ScannerFamily:  Name,
 			Description:    "run npm lint",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-  - name: run npm lint
-    image: node:%s-alpine
-    commands:
-      - npm run lint`, reactVersion),
-				Command: "npm run lint",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "run npm lint",
+					Image:    fmt.Sprintf("node:%s-alpine", nodeVersion),
+					Commands: []string{"npm run lint"},
+				},
+				CLI:     "npm run lint",
 				HelpURL: "https://docs.npmjs.com/misc/lint",
 			},
 		}
@@ -149,20 +150,20 @@ func (sc *scannerConfig) lintCheck(scriptMap map[string]interface{}, reactVersio
 	return false, outputResults
 }
 
-func (sc *scannerConfig) testCheck(scriptMap map[string]interface{}, nodeVersion string) (match bool, outputResults []types.Scanlet) {
+func (sc *scannerConfig) testCheck(scriptMap map[string]interface{}) (match bool, outputResults []types.Scanlet) {
 	if scriptMap["test"] != "" {
 		testResult := types.Scanlet{
 			Name:           TestCheck,
 			ScannerFamily:  Name,
 			Description:    "run npm test",
-			OutputRenderer: dronebuildmaker.Name,
-			Spec: dronebuildmaker.OutputFields{
-				RawYaml: fmt.Sprintf(`
-  - name: run npm test
-    image: node:%s-alpine
-    commands:
-      - npm run test`, nodeVersion),
-				Command: "npm run test",
+			OutputRenderer: buildmaker.Name,
+			Spec: buildmaker.OutputFields{
+				Build: buildmaker.Build{
+					Name:     "run npm test",
+					Image:    fmt.Sprintf("node:%s-alpine", nodeVersion),
+					Commands: []string{"npm run test"},
+				},
+				CLI:     "npm run test",
 				HelpURL: "https://docs.npmjs.com/misc/test",
 			},
 		}
@@ -173,7 +174,7 @@ func (sc *scannerConfig) testCheck(scriptMap map[string]interface{}, nodeVersion
 	return false, outputResults
 }
 
-func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.Scanlet, err error) {
+func (sc *scannerConfig) droneCheck() (outputResults []types.Scanlet, err error) {
 	pipelines, err := dronescanner.ReadDroneFile(sc.workingDirectory, dronescanner.DroneFileLocation)
 	if err != nil {
 		return outputResults, err
@@ -203,7 +204,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should run npm build", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/build",
 					RawYaml: fmt.Sprintf(`
     - name: run npm build
@@ -220,7 +221,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should run npm lint", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/lint",
 					RawYaml: fmt.Sprintf(`
   - name: run npm build
@@ -237,7 +238,7 @@ func (sc *scannerConfig) droneCheck(nodeVersion string) (outputResults []types.S
 				ScannerFamily:  Name,
 				Description:    fmt.Sprintf("pipeline '%s' should run npm test", pipelines[i].Name),
 				OutputRenderer: outputter.DroneBuildAnalysis,
-				Spec: buildanalysis.OutputFields{
+				Spec: dronebuildanalysis.OutputFields{
 					HelpURL: "https://docs.npmjs.com/misc/test",
 					RawYaml: fmt.Sprintf(`
   - name: run npm build
