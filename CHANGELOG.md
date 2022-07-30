@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.9.0](https://github.com/tphoney/best_practice/tree/v0.9.0) (2022-07-30)
+
+[Full Changelog](https://github.com/tphoney/best_practice/compare/v0.8.0...v0.9.0)
+
+**Implemented enhancements:**
+
+- \(feat\) check drone build for outdated tags [\#33](https://github.com/tphoney/best_practice/pull/33) ([tphoney](https://github.com/tphoney))
+
 ## [v0.8.0](https://github.com/tphoney/best_practice/tree/v0.8.0) (2022-07-29)
 
 [Full Changelog](https://github.com/tphoney/best_practice/compare/v0.7.0...v0.8.0)

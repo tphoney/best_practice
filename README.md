@@ -18,7 +18,7 @@ A scanner will check a language for build, lint, testing capabilities and langua
 And the following output formats:
 
 - Best practice for existing Drone builds
-- Drone build file creation (creates a drone file, or a .drone.yml.new file if you have an existing drone file)
+- Build file creation, either Drone or CIE (*.new file if you have an existing file)
 - Harness product recommendations
 
 Example output:
@@ -37,8 +37,8 @@ To run the best_practice tool against the current working directory.
 docker pull tphoney/best_practice
 docker run -it --rm -v $(pwd):/plugin -e PLUGIN_WORKING_DIRECTORY=/plugin tphoney/best_practice
 ```
-It will create a drone build file, give best practice (if a drone file exists) and harness product recommendations.
 
+It will create a drone build file, give best practice (if a drone file exists) and harness product recommendations.
 
 To execute the newly created drone build file.
 
