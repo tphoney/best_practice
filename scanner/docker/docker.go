@@ -267,6 +267,7 @@ type dockerTags []struct {
 }
 
 func getContainerUpdates(images []*image) (err error) {
+	ctx := context.Background()
 	for i := range images {
 		// split the name and tag
 		split := strings.Split(images[i].image, ":")
@@ -279,9 +280,13 @@ func getContainerUpdates(images []*image) (err error) {
 			return currentErr
 		}
 		// get the docker tags for the image
-		resp, err := http.Get(fmt.Sprintf("https://registry.hub.docker.com/v1/repositories/%s/tags", name))
-		if err != nil {
-			return err
+		req, reqErr := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://registry.hub.docker.com/v1/repositories/%s/tags", name), http.NoBody)
+		if reqErr != nil {
+			return reqErr
+		}
+		resp, doErr := http.DefaultClient.Do(req)
+		if doErr != nil {
+			return doErr
 		}
 		var tags dockerTags
 		err = json.NewDecoder(resp.Body).Decode(&tags)
