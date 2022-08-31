@@ -50,7 +50,7 @@ steps:
       - golangci-lint
     when:
       ref:
-        - refs/heads/master
+        - refs/heads/main
         - refs/tags/*
   - name: publish binaries to github
     image: plugins/github-release
