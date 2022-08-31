@@ -82,5 +82,5 @@ steps:
       - build binaries
     when:
       ref:
-        - refs/heads/master
+        - refs/heads/main
         - refs/tags/*
