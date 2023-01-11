@@ -126,7 +126,7 @@ func (sc *scannerConfig) securityCheck(dockerFiles []string) (outputResults []ty
 			OutputRenderer: buildmaker.Name,
 			Spec: buildmaker.OutputFields{
 				Build: buildmaker.Build{
-					Name:  fmt.Sprintf("docker build %s", dockerFiles[i]),
+					Name:  fmt.Sprintf("docker scan %s", dockerFiles[i]),
 					Image: "plugins/drone-snyk",
 					DroneAppend: fmt.Sprintf(`  privileged: true
     settings:
